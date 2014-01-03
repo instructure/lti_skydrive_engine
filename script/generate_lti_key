@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+# This command will automatically be run when you run "rails" with Rails 3 gems installed from the root of your application.
+
+require File.expand_path("../../config/environment", __FILE__)
+
+key = LtiKey.new_key
+puts "key:    #{key.key}"
+puts "secret: #{key.secret}"

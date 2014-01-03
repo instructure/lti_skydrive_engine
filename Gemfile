@@ -12,3 +12,11 @@ gemspec
 
 # To use debugger
 # gem 'debugger'
+
+group :development do
+  gem 'guard-embertools'
+end
+
+group :test do
+  gem 'rspec-rails'
+end
