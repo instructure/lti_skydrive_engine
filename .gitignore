@@ -8,7 +8,6 @@ test/dummy/tmp/
 test/dummy/.sass-cache
 
 foundation/.sass-cache
-public/javascripts/application.js
 
 #ignore configuration files
 *.yml

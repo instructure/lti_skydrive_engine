@@ -38,9 +38,9 @@ Getting Started
    bundle exec guard
    ```
 
-3. Configure your database by copying config/database.yml.example to
-   config/database.yml and then modifying it to use your database of choice.
-   The default configuration uses sqlite and should work out of the box.
+3. Configure your database by modifying test/dummy/config/database.yml.example
+   it to use your database of choice.  The default configuration uses sqlite and
+   should work out of the box.
    ```
    cp config/database.yml.example config/database.yml
    bundle exec rake db:migrate
@@ -54,16 +54,18 @@ Getting Started
    Microsoft is very picky about the app domain and redirect url matching your
    app exactly.  The redirect url will always be <yourhost>/microsoft_oauth.  If
    you are running this app in development, your domain and url will most likely
-   be `localhost:3000` and `http://localhost:3000/microsoft_oauth` respectively.
+   be `localhost:3000` and `http://localhost:3000/skydrive/microsoft_oauth` respectively.
 
    Once you have a client id and secret, copy your config/sharepoint.yml.example
-   file to config/sharepoint.yml and replace the client_id and client_secret
+   file to test/dummy/config/sharepoint.yml and replace the client_id and client_secret
    with your new key and secret.  The guid in sharepoint.yml is a constant
    provided by microsoft and is implementation indepenant.
 
 5. Start the rails server
    ```
-   rails server
+   cd test/dummy
+   bundle install
+   bundle exec rails server
    ```
 
 6. Do a simple sanity test by navigating to your app in a browser (ie `http://locahost:3000`).
