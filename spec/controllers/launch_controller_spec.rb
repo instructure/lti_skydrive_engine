@@ -10,7 +10,6 @@ module Skydrive
     let(:user) {User.new(email: 'user@email.com', username: 'user', name: 'User')}
 
     describe '#basic_launch' do
-      require 'ims/lti'
       before(:each) do
         tp = IMS::LTI::ToolProvider.new(nil, nil, {})
         tp.lis_person_contact_email_primary = email

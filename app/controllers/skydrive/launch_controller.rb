@@ -1,3 +1,5 @@
+require 'ims/lti'
+
 module Skydrive
   class LaunchController < ApplicationController
     include ActionController::Cookies
