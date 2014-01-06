@@ -1,8 +1,6 @@
 require 'spec_helper'
 
 module Skydrive
-  require 'pry'
-  binding.pry
   describe ApiKey do
     let(:user) {User.create(:email => 'email@email.com', username: 'user', name: 'User')}
     it "creates api keys" do

@@ -20,7 +20,7 @@ class SkydriveProxy
     api_key = ApiKey.where(access_token: params['access_token']).first
     if api_key
       user = api_key.user
-      uri = "#{user.skydrive_token.personal_url}_api/Web/GetFileByServerRelativeUrl('#{params['file']}')"
+      uri = "#{user.token.personal_url}_api/Web/GetFileByServerRelativeUrl('#{params['file']}')"
       [200, {"Content-Type" => "text/plain"}, [uri]]
     else
       [401, {"Content-Type" => "text/plain"}, []]

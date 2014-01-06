@@ -11,4 +11,4 @@ foundation/.sass-cache
 public/javascripts/application.js
 
 #ignore configuration files
-/config/*.yml
+config/*.yml

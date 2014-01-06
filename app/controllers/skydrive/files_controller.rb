@@ -8,16 +8,16 @@ module Skydrive
     def ensure_valid_skydrive_token
       head :unauthorized unless current_user.valid_skydrive_token?
 
-      if current_user.skydrive_token.not_before > Time.now
-        results = client.refresh_token(current_user.skydrive_token.refresh_token)
-        current_user.skydrive_token.update_attributes(results)
+      if current_user.token.not_before > Time.now
+        results = client.refresh_token(current_user.token.refresh_token)
+        current_user.token.update_attributes(results)
       end
     end
 
     def client
       @client ||= Skydrive::Client.new(SHAREPOINT.merge(
-                       client_domain: current_user.skydrive_token.client_domain,
-                       token: current_user.skydrive_token.access_token))
+                       client_domain: current_user.token.client_domain,
+                       token: current_user.token.access_token))
     end
 
     def index
@@ -25,7 +25,7 @@ module Skydrive
       uri = nil if uri == 'root' || uri == 'undefined'
       has_parent = true
       unless uri.present?
-        personal_url = current_user.skydrive_token.personal_url
+        personal_url = current_user.token.personal_url
         data = client.api_call(personal_url + "_api/web/lists/Documents/")
         uri = data['RootFolder']['__deferred']['uri']
         has_parent = false
@@ -50,8 +50,8 @@ module Skydrive
       api_key = ApiKey.where(access_token: params[:token]).first
       if api_key
         user = api_key.user
-        uri = "#{user.skydrive_token.personal_url}_api/Web/GetFileByServerRelativeUrl('#{params[:file].gsub(/ /, '%20')}')/$value"
-        tempfile = open(uri, { "Authorization" => "Bearer #{user.skydrive_token.access_token}"})
+        uri = "#{user.token.personal_url}_api/Web/GetFileByServerRelativeUrl('#{params[:file].gsub(/ /, '%20')}')/$value"
+        tempfile = open(uri, { "Authorization" => "Bearer #{user.token.access_token}"})
         send_file tempfile.path, filename: params[:file].split('/').last
       else
         render status: 401

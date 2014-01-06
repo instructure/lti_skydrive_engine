@@ -1,5 +1,5 @@
 module Skydrive
-  class SkydriveToken < ActiveRecord::Base
+  class Token < ActiveRecord::Base
     validates :user_id, uniqueness: true
     belongs_to :user
 

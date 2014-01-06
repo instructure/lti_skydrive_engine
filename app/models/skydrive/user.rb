@@ -3,7 +3,7 @@ module Skydrive
     include ActiveModel::ForbiddenAttributesProtection
 
     has_many :api_keys
-    has_one :skydrive_token
+    has_one :token
 
     validates :email, presence: true, uniqueness: true
     validates :username, presence: true, uniqueness: true
@@ -22,7 +22,7 @@ module Skydrive
     end
 
     def valid_skydrive_token?
-      self.skydrive_token && self.skydrive_token.is_valid?
+      self.token && self.token.is_valid?
     end
   end
 end

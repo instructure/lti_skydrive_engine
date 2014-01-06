@@ -67,8 +67,8 @@ module Skydrive
               email: email
           )
 
-      user.skydrive_token = SkydriveToken.create(client_domain: "#{client_domain}-my.sharepoint.com") unless user.skydrive_token
-      user.skydrive_token.update_attributes(client_domain: "#{client_domain}-my.sharepoint.com") unless user.skydrive_token.client_domain
+      user.token = Token.create(client_domain: "#{client_domain}-my.sharepoint.com") unless user.token
+      user.token.update_attributes(client_domain: "#{client_domain}-my.sharepoint.com") unless user.token.client_domain
       user.cleanup_api_keys
 
       code = user.session_api_key(params).oauth_code
@@ -77,7 +77,7 @@ module Skydrive
     end
 
     def skydrive_authorized
-      skydrive_token = current_user.skydrive_token
+      skydrive_token = current_user.token
       if skydrive_token && skydrive_token.requires_refresh?
         results = skydrive_client.refresh_token(skydrive_token.refresh_token)
         return render json: results if results.key? 'error'
@@ -100,7 +100,7 @@ module Skydrive
       return render text: "#{results['error']} - #{results['error_description']}" if results.key? 'error'
 
       results.merge!(personal_url: skydrive_client.get_user['PersonalUrl'])
-      @current_user.skydrive_token.update_attributes(results)
+      @current_user.token.update_attributes(results)
 
       redirect_to "/#/oauth/callback"
     end
@@ -136,7 +136,7 @@ module Skydrive
     private
 
     def skydrive_client
-      @skydrive_client ||= Skydrive::Client.new(SHAREPOINT.merge(client_domain: current_user.skydrive_token.client_domain))
+      @skydrive_client ||= Client.new(SHAREPOINT.merge(client_domain: current_user.token.client_domain))
     end
 
     def skydrive_redirect_uri
