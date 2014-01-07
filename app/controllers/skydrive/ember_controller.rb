@@ -3,10 +3,9 @@ require_dependency "skydrive/application_controller"
 module Skydrive
   class EmberController < ApplicationController
     def index
-      @full_path = request.env['SCRIPT_NAME']
       @env = {
         'CONFIG' => {
-          host: @full_path
+          host: root_url
         }
       }
       render layout: false

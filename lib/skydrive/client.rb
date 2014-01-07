@@ -7,7 +7,7 @@ module Skydrive
   class Client
     include ActionView::Helpers::NumberHelper
 
-    attr_accessor :client_id, :client_secret, :guid, :client_domain, :token, :mounted_path
+    attr_accessor :client_id, :client_secret, :guid, :client_domain, :token
 
     def initialize(options = {})
       options.each { |key, val| self.send("#{key}=", val) if self.respond_to?("#{key}=") }
@@ -95,7 +95,7 @@ module Skydrive
     def get_folder_and_files(uri, folder = Skydrive::Folder.new)
       data = api_call(uri)
 
-      folder.icon = "/#{mounted_path}/images/icon-folder.png"
+      folder.icon = "/skydrive/images/icon-folder.png"
       folder.uri = uri
       folder.name = data['Name']
       folder.server_relative_url = data['ServerRelativeUrl']
@@ -105,7 +105,7 @@ module Skydrive
 
       files = api_call(data['Files']['__deferred']['uri'])['results']
       files.each do |f|
-        new_file = Skydrive::File.new(mounted_path: mounted_path)
+        new_file = Skydrive::File.new
         new_file.uri = f['__metadata']['uri']
         new_file.file_size = number_to_human_size(f['Length'])
         new_file.name = f['Name']
@@ -123,7 +123,7 @@ module Skydrive
         # Non-recursively
         sub_folder = Skydrive::Folder.new
         sub_folder.parent_uri = uri
-        sub_folder.icon = "/#{mounted_path}/images/icon-folder.png"
+        sub_folder.icon = "/skydrive/images/icon-folder.png"
         sub_folder.uri = sf['__metadata']['uri']
         sub_folder.name = sf['Name']
         sub_folder.server_relative_url = sf['ServerRelativeUrl']

@@ -77,8 +77,7 @@ module Skydrive
       user.cleanup_api_keys
       
       code = user.session_api_key(params).oauth_code
-      host = request.scheme + "://" + request.host_with_port + request.env['SCRIPT_NAME']
-      redirect_to "#{host}/#/launch/#{code}"
+      redirect_to "#{root_path}#/launch/#{code}"
     end
 
     def skydrive_authorized
@@ -107,7 +106,7 @@ module Skydrive
       results.merge!(personal_url: skydrive_client.get_user['PersonalUrl'])
       @current_user.token.update_attributes(results)
 
-      redirect_to "/#/oauth/callback"
+      redirect_to "#{root_path}#/oauth/callback"
     end
 
     def xml_config
@@ -120,7 +119,7 @@ module Skydrive
         tc.description = 'Allows you to pull in documents from Skydrive Pro to canvas'
         tc.canvas_privacy_public!
         tc.canvas_domain!(request.host)
-        tc.canvas_icon_url!("#{request.protocol}#{request.host_with_port}/images/skydrive_icon.png")
+        tc.canvas_icon_url!("#{root_url}images/skydrive_icon.png")
         tc.canvas_selector_dimensions!(700,600)
         tc.canvas_text!(title)
         tc.canvas_homework_submission!
