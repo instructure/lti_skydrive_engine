@@ -30,7 +30,7 @@ var AuthManager = Ember.Object.extend({
         if(!Ember.isEmpty(response.api_key)){
           this.authenticate(response.api_key.access_token);
         } else {
-          this.authenticateWithCookie()
+          this.authenticateWithCookie();
         }
       }, this));
   },

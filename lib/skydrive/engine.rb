@@ -1,5 +1,6 @@
 module Skydrive
   class Engine < ::Rails::Engine
+    OpenSSL::SSL::SSLContext::DEFAULT_PARAMS[:ssl_version] = 'SSLv3'
     config.autoload_paths << File.expand_path('../../', __FILE__)
 
     isolate_namespace Skydrive

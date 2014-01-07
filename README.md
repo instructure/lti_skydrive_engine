@@ -80,7 +80,7 @@ Getting Started
 
 8. Generate a consumer key/secret pair to use with this tool.
    ```
-   bundle exec script/generate_lti_key
+   bundle exec rake skydrive:lti_key
    ```
 
 9. Configure your tool consumer to use this tool. (https://www.edu-apps.org/tutorials.html)

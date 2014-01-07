@@ -1,4 +1,5 @@
 require 'ims/lti'
+require 'pry'
 
 module Skydrive
   class LaunchController < ApplicationController
@@ -69,13 +70,16 @@ module Skydrive
               email: email
           )
 
-      user.token = Token.create(client_domain: "#{client_domain}-my.sharepoint.com") unless user.token
-      user.token.update_attributes(client_domain: "#{client_domain}-my.sharepoint.com") unless user.token.client_domain
+      if user.token
+        user.token.update_attributes(client_domain: "#{client_domain}-my.sharepoint.com")
+      else
+        user.token = Token.create(client_domain: "#{client_domain}-my.sharepoint.com")
+      end
       user.cleanup_api_keys
-
+      
       code = user.session_api_key(params).oauth_code
-
-      redirect_to "/#/launch/#{code}"
+      host = request.scheme + "://" + request.host_with_port + request.env['SCRIPT_NAME']
+      redirect_to "#{host}/#/launch/#{code}"
     end
 
     def skydrive_authorized

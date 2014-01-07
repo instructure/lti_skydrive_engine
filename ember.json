@@ -1,5 +1,5 @@
 {
-  "jsPath": "public/javascripts",
+  "jsPath": "ember-app/javascripts",
   "modules": "cjs"
 }
 

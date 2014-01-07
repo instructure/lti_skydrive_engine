@@ -1,6 +1,7 @@
 require 'rest_client'
 require 'curb'
 require 'json'
+require 'mimemagic'
 
 module Skydrive
   class Client
@@ -94,7 +95,7 @@ module Skydrive
     def get_folder_and_files(uri, folder = Skydrive::Folder.new)
       data = api_call(uri)
 
-      folder.icon = '/images/icon-folder.png'
+      folder.icon = '/skydrive/images/icon-folder.png'
       folder.uri = uri
       folder.name = data['Name']
       folder.server_relative_url = data['ServerRelativeUrl']
@@ -122,7 +123,7 @@ module Skydrive
         # Non-recursively
         sub_folder = Skydrive::Folder.new
         sub_folder.parent_uri = uri
-        sub_folder.icon = '/images/icon-folder.png'
+        sub_folder.icon = '/skydrive/images/icon-folder.png'
         sub_folder.uri = sf['__metadata']['uri']
         sub_folder.name = sf['Name']
         sub_folder.server_relative_url = sf['ServerRelativeUrl']
