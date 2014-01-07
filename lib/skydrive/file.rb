@@ -2,7 +2,7 @@ module Skydrive
   class File
     attr_accessor :uri, :file_size, :name, :server_relative_url, :time_created, :time_last_modified, :title, :content_tag,
                   :content_type, :is_image, :is_text, :is_video, :mime_comment, :icon, :kind, :suffix, :is_embeddable,
-                  :homework_submission_url
+                  :homework_submission_url, :mounted_path
 
     def direct_url
       "BLAH BLAH BLAH"
@@ -15,22 +15,22 @@ module Skydrive
         if mm.image?
           case mm.to_s
             when 'image/png'
-              self.icon = '/skydrive/images/icon-png.png'
+              self.icon = "/#{mounted_path}/images/icon-png.png"
             when 'image/jpeg'
-              self.icon = '/skydrive/images/icon-jpg.png'
+              self.icon = "/#{mounted_path}/images/icon-jpg.png"
             else
-              self.icon = '/skydrive/images/icon-jpg.png'
+              self.icon = "/#{mounted_path}/images/icon-jpg.png"
           end
         elsif mm.text?
           if mm.extensions & ['doc', 'docx']
-            self.icon = '/skydrive/images/icon-word.png'
+            self.icon = "/#{mounted_path}/images/icon-word.png"
           else
-            self.icon = '/skydrive/images/icon-file.png'
+            self.icon = "/#{mounted_path}/images/icon-file.png"
           end
         elsif mm.to_s == 'application/pdf'
-          self.icon = '/skydrive/images/icon-pdf.png'
+          self.icon = "/#{mounted_path}/images/icon-pdf.png"
         else
-          self.icon = '/skydrive/images/icon-file.png'
+          self.icon = "/#{mounted_path}/images/icon-file.png"
         end
         self.kind = mm.comment
         self.suffix = mm.extensions.last
@@ -41,7 +41,7 @@ module Skydrive
           self.is_embeddable = false
         end
       else
-        self.icon = '/skydrive/images/icon-file.png'
+        self.icon = "/#{mounted_path}/images/icon-file.png"
         self.kind = ''
         self.suffix = self.name.split('.').try(:last) || ''
         self.is_embeddable = false

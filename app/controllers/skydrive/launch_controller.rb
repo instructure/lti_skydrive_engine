@@ -1,5 +1,4 @@
 require 'ims/lti'
-require 'pry'
 
 module Skydrive
   class LaunchController < ApplicationController

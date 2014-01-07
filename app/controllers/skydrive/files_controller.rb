@@ -17,7 +17,8 @@ module Skydrive
     def client
       @client ||= Skydrive::Client.new(SHAREPOINT.merge(
                        client_domain: current_user.token.client_domain,
-                       token: current_user.token.access_token))
+                       token: current_user.token.access_token,
+                       mounted_path: request.env['SCRIPT_NAME']))
     end
 
     def index

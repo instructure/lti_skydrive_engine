@@ -36,5 +36,5 @@ module Skydrive
       end
       @current_api_key
     end
-  end
+
 end

@@ -1,4 +1,7 @@
 Skydrive::Engine.routes.draw do
+  root "ember#index"
+
+  get 'health_check' => 'ember#health_check'
   get '/download/file' => 'files#download', as: :download
 
   scope "api/v1" do
