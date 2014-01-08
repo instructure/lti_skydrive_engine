@@ -5,7 +5,7 @@ module Skydrive
     def index
       @env = {
         'CONFIG' => {
-          host: root_url
+          root_path: root_path
         }
       }
       render layout: false
