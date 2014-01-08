@@ -15,6 +15,8 @@ gemspec
 
 group :development do
   gem 'guard-embertools'
+  gem 'uglifier'
+  gem 'ember-source'
 end
 
 group :test do

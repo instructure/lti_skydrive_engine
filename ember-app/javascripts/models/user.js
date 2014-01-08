@@ -7,7 +7,7 @@ var User = Ember.Model.extend({
 });
 
 User.reopenClass({
-  url:            window.ENV.CONFIG.root_path + "api/v1/users",
+  url:            Ember.ENV.CONFIG.root_path + "api/v1/users",
   adapter:        Ember.RESTAdapter.create(),
   rootKey:        "user",
   collectionKey:  "users",

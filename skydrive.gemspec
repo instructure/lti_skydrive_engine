@@ -7,6 +7,7 @@ require "skydrive/version"
 Gem::Specification.new do |s|
   s.name        = "skydrive"
   s.version     = Skydrive::VERSION
+  s.licenses    = ['MIT']
   s.authors     = ["Brad Humphrey"]
   s.email       = ["brad@instructure.com"]
   s.homepage    = "https://www.edu-apps.org/"
