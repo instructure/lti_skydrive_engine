@@ -5,11 +5,11 @@ namespace :skydrive do
       require 'ember/source'
 
       puts 'building ember for production'
-      FileUtils.cp Ember::Source.bundled_path_for('ember.min.js'), 'public/skydrive/javascripts/vendor/ember.js'
+      FileUtils.cp Ember::Source.bundled_path_for('ember.min.js'), 'app/assets/javascripts/skydrive/vendor/ember.js'
       puts 'building ember'
-      puts `ember build --out-file public/skydrive/javascripts/application.js`
+      puts `ember build --out-file app/assets/javascripts/skydrive/application.js`
       puts 'minifying application.js'
-      rewrite_file('public/skydrive/javascripts/application.js') {|f| Uglifier.compile(f)}
+      rewrite_file('app/assets/javascripts/skydrive/application.js') {|f| Uglifier.compile(f)}
 
       #if(Rails.env.production?)
       #  puts 'building ember for production'

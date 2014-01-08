@@ -111,6 +111,8 @@ module Skydrive
 
     def xml_config
       # ie http://localhost:9393/config?sharepoint_client_domain=my_subdomain
+      host = request.scheme + "://" + request.host_with_port + "/"
+
       if params['sharepoint_client_domain']
         url = "#{request.protocol}#{request.host_with_port}#{launch_path}"
         title = "Skydrive Pro"
@@ -119,7 +121,7 @@ module Skydrive
         tc.description = 'Allows you to pull in documents from Skydrive Pro to canvas'
         tc.canvas_privacy_public!
         tc.canvas_domain!(request.host)
-        tc.canvas_icon_url!("#{root_url}images/skydrive_icon.png")
+        tc.canvas_icon_url!("#{host}assets/skydrive/skydrive_icon.png")
         tc.canvas_selector_dimensions!(700,600)
         tc.canvas_text!(title)
         tc.canvas_homework_submission!
