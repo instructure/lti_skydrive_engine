@@ -1,3 +1,5 @@
+require 'mimemagic'
+
 module Skydrive
   class File
     attr_accessor :uri, :file_size, :name, :server_relative_url, :time_created, :time_last_modified, :title, :content_tag,
@@ -17,7 +19,7 @@ module Skydrive
             else
               self.icon = "/assets/skydrive/icon-jpg.png"
           end
-        elsif mm.text?
+        elsif mm.text? || mm.subtype == "msword"
           if mm.extensions & ['doc', 'docx']
             self.icon = "/assets/skydrive/icon-word.png"
           else

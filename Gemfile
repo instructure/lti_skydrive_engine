@@ -17,8 +17,10 @@ group :development do
   gem 'guard-embertools'
   gem 'uglifier'
   gem 'ember-source'
+  gem 'guard-rspec'
 end
 
 group :test do
   gem 'rspec-rails'
+  gem 'webmock'
 end
