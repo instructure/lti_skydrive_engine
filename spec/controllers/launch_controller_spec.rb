@@ -85,9 +85,5 @@ module Skydrive
         response.should be_success
       end
     end
-
-    describe '#microsoft_oauth' do
-
-    end
   end
 end
