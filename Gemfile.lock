@@ -65,10 +65,10 @@ GEM
     guard-embertools (0.2.1)
       colorize
       guard
-    handlebars-source (1.0.12)
     guard-rspec (4.2.3)
       guard (~> 2.1)
       rspec (>= 2.14, < 4.0)
+    handlebars-source (1.0.12)
     hike (1.2.3)
     i18n (0.6.9)
     ims-lti (1.1.4)
