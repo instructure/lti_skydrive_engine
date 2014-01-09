@@ -5,7 +5,7 @@ require "skydrive/version"
 
 # Describe your gem and declare its dependencies:
 Gem::Specification.new do |s|
-  s.name        = "skydrive"
+  s.name        = "lti_skydrive"
   s.version     = Skydrive::VERSION
   s.licenses    = ['MIT']
   s.authors     = ["Brad Humphrey"]
