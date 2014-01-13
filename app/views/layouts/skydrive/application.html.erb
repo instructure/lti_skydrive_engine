@@ -3,18 +3,15 @@
 <head>
   <title>Sky Drive</title>
 	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
-  <%= stylesheet_link_tag    "skydrive/stylesheets/font-awesome/font-awesome.min.css", media: "all" %>
-  <%= stylesheet_link_tag    "skydrive/stylesheets/normalize.css", media: "all" %>
-  <%= stylesheet_link_tag    "skydrive/stylesheets/app.css", media: "all" %>
-  <%= javascript_include_tag "skydrive/javascripts/vendor/jquery.js" %>
-  <%= javascript_include_tag "skydrive/javascripts/vendor/handlebars.js" %>
-  <%= javascript_include_tag "skydrive/javascripts/vendor/ember.js" %>
+  <%= stylesheet_link_tag    "skydrive/font-awesome/font-awesome.min.css", media: "all" %>
+  <%= stylesheet_link_tag    "skydrive/application.css", media: "all" %>
+  <%= javascript_include_tag "skydrive/application.js" %>
   <%= csrf_meta_tags %>
+  <title>Sky Drive</title>
 </head>
 <body>
 
-<%#= yield %>
-<script src="skydrive/javascripts/application.js"></script>
+<%= yield %>
 
 </body>
 </html>

@@ -8,7 +8,6 @@ module Skydrive
           root_path: root_path
         }
       }
-      render layout: false
     end
 
     def health_check

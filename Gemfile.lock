@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    skydrive (0.0.1)
+    lti_skydrive (0.0.3)
       active_model_serializers (~> 0.8.0)
       curb
       ims-lti
@@ -172,8 +172,8 @@ DEPENDENCIES
   ember-source
   guard-embertools
   guard-rspec
+  lti_skydrive!
   rspec-rails
-  skydrive!
   sqlite3
   uglifier
   webmock
