@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    lti_skydrive (0.0.3)
+    lti_skydrive (0.0.4)
       active_model_serializers (~> 0.8.0)
       curb
       ims-lti
