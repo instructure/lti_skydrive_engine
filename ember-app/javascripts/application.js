@@ -304,10 +304,11 @@ var FilesRoute = AuthenticatedRoute.extend({
       if (popupWindow) {
         popupWindow.close();
       }
+      host = window.ENV.CONFIG.host;
       ctrl.set('authRedirectUrl', null);
       ctrl.set('popupWindow', null);
       ctrl.set('isLoading', true);
-      ctrl.set('model', Ember.$.getJSON('/api/v1/files').then(function(data) { 
+      ctrl.set('model', Ember.$.getJSON(host + 'api/v1/files').then(function(data) {
         ctrl.set('model', data); 
         ctrl.set('isLoading', false);
       }));

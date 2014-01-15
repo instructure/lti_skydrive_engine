@@ -15,7 +15,7 @@ var FilesRoute = AuthenticatedRoute.extend({
     var skydriveAuthorized = Ember.$.getJSON(path + 'api/v1/skydrive_authorized').then(
       function() {
         controller.set('isLoading', true);
-        Ember.$.getJSON(path + '/api/v1/files/' + uri).then(function(data) {
+        Ember.$.getJSON(path + 'api/v1/files/' + uri).then(function(data) {
           controller.set('model', data);
           controller.set('isLoading', false);
         })
@@ -40,10 +40,11 @@ var FilesRoute = AuthenticatedRoute.extend({
       if (popupWindow) {
         popupWindow.close();
       }
+      path = Ember.ENV.CONFIG.root_path;
       ctrl.set('authRedirectUrl', null);
       ctrl.set('popupWindow', null);
       ctrl.set('isLoading', true);
-      ctrl.set('model', Ember.$.getJSON('/skydrive/api/v1/files').then(function(data) { 
+      ctrl.set('model', Ember.$.getJSON(path + 'api/v1/files').then(function(data) {
         ctrl.set('model', data); 
         ctrl.set('isLoading', false);
       }));
