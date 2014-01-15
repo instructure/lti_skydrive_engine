@@ -51,8 +51,7 @@ module Skydrive
       if api_key
         user = api_key.user
         uri = "#{user.token.personal_url}_api/Web/GetFileByServerRelativeUrl('#{params[:file].gsub(/ /, '%20')}')/$value"
-        tempfile = open(uri, { "Authorization" => "Bearer #{user.token.access_token}"})
-        send_file tempfile.path, filename: params[:file].split('/').last
+        send_data open(uri, { "Authorization" => "Bearer #{user.token.access_token}"}, &:read)
       else
         render status: 401
       end
