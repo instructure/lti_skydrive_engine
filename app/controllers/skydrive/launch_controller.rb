@@ -19,13 +19,13 @@ module Skydrive
       tp = IMS::LTI::ToolProvider.new(key, secret, params)
 
       if !key
-        tp.lti_errorlog = "No consumer key"
+        tp.lti_errorlog = "Invalid consumer key or secret"
       elsif !secret
         tp.lti_errorlog = "Consumer key wasn't recognized"
       elsif !tp.valid_request?(request)
         tp.lti_errorlog = "The OAuth signature was invalid"
       elsif Time.now.utc.to_i - tp.request_oauth_timestamp.to_i > 120
-        tp.lti_errorlog = "Your request is too old."
+        tp.lti_errorlog = "Your request is too old"
       end
 
       #
@@ -47,18 +47,18 @@ module Skydrive
     def basic_launch
       tp = tool_provider
       if tp.lti_errorlog
-        render text: tp.lti_errorlog, status: 400
+        render text: tp.lti_errorlog, status: 400, layout: "skydrive/error"
         return
       end
 
       email = tp.lis_person_contact_email_primary
       unless email.present?
-        render text: "Missing email information"
+        render text: "Missing email information", layout: "skydrive/error"
         return
       end
 
       unless client_domain = tp.get_custom_param('sharepoint_client_domain')
-        render text: "Missing sharepoint client domain", status: 400
+        render text: "Missing sharepoint client domain", status: 400, layout: "skydrive/error"
         return
       end
 

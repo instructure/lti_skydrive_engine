@@ -39,7 +39,7 @@ module Skydrive
           self.is_embeddable = false
         end
       else
-        self.icon = "/skydrive/images/icon-file.png"
+        self.icon = "/assets/skydrive/icon-file.png"
         self.kind = ''
         self.suffix = self.name.split('.').try(:last) || ''
         self.is_embeddable = false

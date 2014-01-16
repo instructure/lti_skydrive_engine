@@ -21,10 +21,11 @@ var AuthManager = Ember.Object.extend({
 
   // Determine if the user is currently authenticated.
   isAuthenticated: function() {
-    return !Ember.isEmpty(this.get('apiKey.accessToken'));
+    return (!Ember.isEmpty(this.get('apiKey.accessToken')) && !this.get('isAuthenticating'));
   },
 
   authenticateWithCode: function(code) {
+    this.set('isAuthenticating', true);
     $.post('oauth2/token', {code: code})
       .always($.proxy(function(response) {
         if(!Ember.isEmpty(response.api_key)){
@@ -32,14 +33,17 @@ var AuthManager = Ember.Object.extend({
         } else {
           this.authenticateWithCookie();
         }
+        this.set('isAuthenticating', false);
       }, this));
   },
 
   authenticateWithCookie: function() {
+    this.set('isAuthenticating', true);
     var accessToken = $.cookie('access_token');
     if (!Ember.isEmpty(accessToken)) {
       this.authenticate(accessToken);
     }
+    this.set('isAuthenticating', false);
   },
 
   // Authenticate the user. Once they are authenticated, set the access token to be submitted with all

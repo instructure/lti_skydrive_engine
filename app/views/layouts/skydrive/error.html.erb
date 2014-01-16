@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Sky Drive</title>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+  <%= stylesheet_link_tag    "skydrive/font-awesome/font-awesome.min.css", media: "all" %>
+  <%= stylesheet_link_tag    "skydrive/application.css", media: "all" %>
+  <%= javascript_include_tag "skydrive/application.js" %>
+  <%= csrf_meta_tags %>
+  <title>Sky Drive</title>
+</head>
+<body>
+
+<nav class="top-bar">
+  <img src="https://p.sfx.ms/images/SkyDriveLogoLight.png" />
+</nav>
+
+<div class="error-instructions">
+  <%= yield %>
+</div>
+
+</body>
+</html>
