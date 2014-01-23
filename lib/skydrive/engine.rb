@@ -1,3 +1,5 @@
+require 'rest_client'
+
 module Skydrive
   class Engine < ::Rails::Engine
     OpenSSL::SSL::SSLContext::DEFAULT_PARAMS[:ssl_version] = 'SSLv3'
@@ -5,6 +7,10 @@ module Skydrive
 
     config.assets.precompile += %w( skydrive/font-awesome/font-awesome.min.css )
     config.assets.precompile += %w( skydrive/ember_app.js )
+
+    config.log = true
+    config.logger = Rails.logger
+    config.log_level = :info
 
     isolate_namespace Skydrive
 
@@ -14,6 +20,11 @@ module Skydrive
           app.config.paths["db/migrate"] << expanded_path
         end
       end
+    end
+
+    initializer :initialize_logger do |app|
+      Skydrive.logger = Rails.logger
+      ::RestClient.log = Skydrive.logger
     end
   end
 end

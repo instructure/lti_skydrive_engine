@@ -24,3 +24,7 @@ group :test do
   gem 'rspec-rails'
   gem 'webmock'
 end
+
+group :development, :test do
+  gem 'jazz_hands'
+end

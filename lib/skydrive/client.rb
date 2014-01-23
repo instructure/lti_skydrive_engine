@@ -44,6 +44,7 @@ module Skydrive
       }
 
       RestClient.post endpoint, options do |response, request, result|
+        log_restclient_response(response, request, result)
         results = format_results(JSON.parse(response))
         self.token = results['access_token']
         results
@@ -64,6 +65,7 @@ module Skydrive
       }
 
       RestClient.post endpoint, options do |response, request, result|
+        log_restclient_response(response, request, result)
         results = format_results(JSON.parse(response))
         self.token = results['access_token']
         results
@@ -147,15 +149,54 @@ module Skydrive
     def api_call(url)
       url.gsub!("https:/i", "https://i")
       uri = URI.escape(url)
-      http = Curl.get(uri) do |http|
+
+      pid = generate_pid
+
+      c = Curl::Easy.new(uri) do |http|
         http.headers['Authorization'] = "Bearer #{token}"
         http.headers['Accept'] = "application/json; odata=verbose"
       end
-      JSON.parse(http.body_str)["d"]
+
+      headers = []
+      buffer = ""
+      c.on_body { |data| 
+        buffer << data
+        data.size
+      }
+      c.on_header { |data|
+        headers << data
+        data.size
+      }
+      c.perform
+
+      Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST: #{uri.to_s}")
+      headerOutput = c.headers.values.join("\n  - ")
+      Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST HEADERS:\n  - #{headerOutput}")
+      Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE HEADERS:\n  - #{headers.join('  - ')}")
+      Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE BODY:\n#{buffer}");
+
+      JSON.parse(buffer)["d"]
     end
 
     def get_user
       api_call("https://#{client_domain}/_api/SP.UserProfiles.PeopleManager/GetMyProperties")
     end
+
+    private
+
+    def log_restclient_response(response, request, result)
+      pid = generate_pid
+      Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST: #{request.url}")
+      Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST PAYLOAD: #{request.payload}")
+      headerOutput = request.headers.values.join("\n  - ")
+      Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST HEADERS:\n  - #{headerOutput}")
+      Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE CODE: #{result.code}")
+      Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE BODY:\n#{response}")
+    end
+
+    def generate_pid
+      (0...8).map { (65 + rand(26)).chr }.join
+    end
+
   end
 end
