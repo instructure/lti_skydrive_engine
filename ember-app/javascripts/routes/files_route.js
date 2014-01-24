@@ -52,10 +52,24 @@ var FilesRoute = AuthenticatedRoute.extend({
       ctrl.set('authRedirectUrl', null);
       ctrl.set('popupWindow', null);
       ctrl.set('isLoading', true);
-      ctrl.set('model', Ember.$.getJSON(path + 'api/v1/files').then(function(data) {
-        ctrl.set('model', data); 
-        ctrl.set('isLoading', false);
-      }));
+      Ember.$.getJSON(path + 'api/v1/files').then(
+        function(data) {
+          ctrl.set('model', data); 
+          ctrl.set('isLoading', false);
+        },
+
+        // The user did not authorize Microsoft
+        function(jqxhr) {
+          Ember.$.getJSON(path + 'api/v1/skydrive_authorized').then(
+            function(data) {},
+            function(jqxhr) {
+              ctrl.set('model', {});
+              ctrl.set('authRedirectUrl', jqxhr.responseText);
+              ctrl.set('isLoading', false);
+            }.bind(this)
+          );
+        }.bind(this)
+       );
     }
   }
 });

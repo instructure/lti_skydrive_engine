@@ -9,7 +9,7 @@ var FilesController = Ember.ObjectController.extend({
   }.property('App.AuthManager.apiKey'),
 
   openAuthPopup: function() {
-    var popup = window.open(this.get('authRedirectUrl'), 'auth', 'width=755,height=500');
+    var popup = window.open(this.get('authRedirectUrl'), 'auth', 'width=795,height=500');
     this.set('popupWindow', popup);
   }
 

@@ -8,7 +8,7 @@ module Skydrive
     def ensure_valid_skydrive_token
       head :unauthorized unless current_user.valid_skydrive_token?
 
-      if current_user.token.not_before > Time.now
+      if current_user.token && current_user.token.not_before > Time.now
         results = client.refresh_token(current_user.token.refresh_token)
         current_user.token.update_attributes(results)
       end

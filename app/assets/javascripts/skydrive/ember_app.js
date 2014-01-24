@@ -55,7 +55,7 @@ var FilesController = Ember.ObjectController.extend({
   }.property('App.AuthManager.apiKey'),
 
   openAuthPopup: function() {
-    var popup = window.open(this.get('authRedirectUrl'), 'auth', 'width=755,height=500');
+    var popup = window.open(this.get('authRedirectUrl'), 'auth', 'width=795,height=500');
     this.set('popupWindow', popup);
   }
 
@@ -322,10 +322,24 @@ var FilesRoute = AuthenticatedRoute.extend({
       ctrl.set('authRedirectUrl', null);
       ctrl.set('popupWindow', null);
       ctrl.set('isLoading', true);
-      ctrl.set('model', Ember.$.getJSON(path + 'api/v1/files').then(function(data) {
-        ctrl.set('model', data); 
-        ctrl.set('isLoading', false);
-      }));
+      Ember.$.getJSON(path + 'api/v1/files').then(
+        function(data) {
+          ctrl.set('model', data); 
+          ctrl.set('isLoading', false);
+        },
+
+        // The user did not authorize Microsoft
+        function(jqxhr) {
+          Ember.$.getJSON(path + 'api/v1/skydrive_authorized').then(
+            function(data) {},
+            function(jqxhr) {
+              ctrl.set('model', {});
+              ctrl.set('authRedirectUrl', jqxhr.responseText);
+              ctrl.set('isLoading', false);
+            }.bind(this)
+          );
+        }.bind(this)
+       );
     }
   }
 });

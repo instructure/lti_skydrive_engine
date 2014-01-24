@@ -101,10 +101,11 @@ module Skydrive
       @current_user = ApiKey.trade_oauth_code_for_access_token(params['state']).user
 
       results = skydrive_client.get_token(skydrive_redirect_uri, params['code'])
-      return render text: "#{results['error']} - #{results['error_description']}" if results.key? 'error'
 
-      results.merge!(personal_url: skydrive_client.get_user['PersonalUrl'])
-      @current_user.token.update_attributes(results)
+      unless results.key? 'error'
+        results.merge!(personal_url: skydrive_client.get_user['PersonalUrl'])
+        @current_user.token.update_attributes(results)
+      end
 
       redirect_to "#{root_path}#/oauth/callback"
     end
