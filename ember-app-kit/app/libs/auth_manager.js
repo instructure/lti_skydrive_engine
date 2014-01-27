@@ -1,19 +1,8 @@
-var User = require('../models/user');
+import User from 'appkit/models/user';
+import ApiKey from 'appkit/models/api_key';
+import ajax from 'appkit/utils/ajax';
 
 var AuthManager = Ember.Object.extend({
-
-  // Load the current user if we have a cookie or an oauth2 code
-  // init: function() {
-  //   this._super();
-
-  //   var code = $.url().param('code');
-
-  //   if(!Ember.isEmpty(code)) {
-  //     this.authenticateWithCode(code);
-  //   } else {
-  //     this.authenticateWithCookie();
-  //   }
-  // },
 
   currentDisplayName: function() {
     return this.get('apiKey.user.name') || 'None';
@@ -21,25 +10,32 @@ var AuthManager = Ember.Object.extend({
 
   // Determine if the user is currently authenticated.
   isAuthenticated: function() {
-    return !Ember.isEmpty(this.get('apiKey.accessToken'));
+    return (!Ember.isEmpty(this.get('apiKey.accessToken')) && !this.get('isAuthenticating'));
   },
 
   authenticateWithCode: function(code) {
-    $.post('oauth2/token', {code: code})
-      .always($.proxy(function(response) {
-        if(!Ember.isEmpty(response.api_key)){
-          this.authenticate(response.api_key.access_token);
-        } else {
-          this.authenticateWithCookie();
-        }
-      }, this));
+    this.set('isAuthenticating', true);
+    ic.ajax.raw({
+      type: 'POST',
+      url: 'oauth/token',
+      data: { code: code }
+    }).then(function(result) {
+      if(!Ember.isEmpty(result.response.api_key)){
+        this.authenticate(result.response.api_key.access_token);
+      } else {
+        this.authenticateWithCookie();
+      }
+      this.set('isAuthenticating', false);
+    }.bind(this));
   },
 
   authenticateWithCookie: function() {
+    this.set('isAuthenticating', true);
     var accessToken = $.cookie('access_token');
     if (!Ember.isEmpty(accessToken)) {
       this.authenticate(accessToken);
     }
+    this.set('isAuthenticating', false);
   },
 
   // Authenticate the user. Once they are authenticated, set the access token to be submitted with all
@@ -49,13 +45,12 @@ var AuthManager = Ember.Object.extend({
       headers: { 'Authorization': 'Bearer ' + accessToken }
     });
 
-    Ember.loadPromise(User.currentUser())
-      .then($.proxy(function(user){
-        this.set('apiKey', App.ApiKey.create({
-          accessToken: accessToken,
-          user: user
-        }));
-      }, this));
+    User.fetchCurrentUser().then(function(user) {
+      this.set('apiKey', ApiKey.create({
+        accessToken: accessToken,
+        user: user
+      }));
+    }.bind(this));
   },
 
   // Log out the user
@@ -75,14 +70,7 @@ var AuthManager = Ember.Object.extend({
       $.cookie('access_token', this.get('apiKey.accessToken'));
     }
   }.observes('apiKey')
+
 });
 
-//Reset the authentication if any ember data request returns a 401 unauthorized error
-//DS.rejectionHandler = function(reason) {
-//  if (reason.status === 401) {
-//    App.AuthManager.reset();
-//  }
-//  throw reason;
-//};
-
-module.exports = AuthManager;
+export default AuthManager;
