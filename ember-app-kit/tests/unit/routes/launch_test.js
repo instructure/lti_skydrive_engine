@@ -1,7 +1,7 @@
 import Launch from 'appkit/routes/launch';
 
 var route;
-module("Unit - LaunchRoute", {
+module("route:launch", {
   setup: function(){
     var container = isolatedContainer([
       'route:launch'

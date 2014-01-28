@@ -5,12 +5,14 @@ import ajax from 'appkit/utils/ajax';
 
 var authManager, apiKey;
 
-module('Unit - AuthManager', {
+module('libs:auth_manager', {
   setup: function() {
     authManager = AuthManager.create();
     apiKey = Em.Object.create({ accessToken: 'ABCDE', user: { name: 'Joe' }});
   },
-  teardown: function() {}
+  teardown: function() {
+    $.removeCookie('access_token');
+  }
 });
 
 test('.currentDisplayName', function() {
@@ -59,18 +61,21 @@ test('.authenticateWithCode without a token response', function() {
   ok(expectation.verify(), "authenticateWithCookie() was called");
 });
 
-test('.authenticateWithCookie', sinon.test(function() {
-  var mockAuthManager = sinon.mock(authManager),
+test('.authenticateWithCookie', function() {
+  var sandbox = sinon.sandbox.create();
+  var mockAuthManager = sandbox.mock(authManager),
       expectation = mockAuthManager.expects('authenticate').withExactArgs('COOKIE_VALUE');
 
-  sinon.stub($, "cookie").returns('COOKIE_VALUE');
-  
+  sandbox.stub($, "cookie").returns('COOKIE_VALUE');
+
   authManager.authenticateWithCookie();
   ok(expectation.verify(), "authenticate('COOKIE_VALUE') was called");
-}));
+
+  sandbox.restore();
+});
 
 test('.authenticate', function() {
-  expect(2);
+  expect(3);
 
   var url = Ember.ENV.CONFIG.root_path + 'api/v1/users';
   var server = fakeServer('GET', url, {
@@ -87,8 +92,27 @@ test('.authenticate', function() {
   server.respond();
   equal(authManager.get('apiKey.user.name'), 'Eric', 'User name is Eric');
   equal(authManager.get('apiKey.accessToken'), 'ACCESS_TOKEN', 'Access token is ACCESS_TOKEN');
+  equal($.ajaxSetup()['headers']['Authorization'], 'Bearer ACCESS_TOKEN', 'Authorization header in ajax is set');
   server.restore();
 });
 
-test('.reset', function() {});
-test('.apiKeyObserver', function() {});
+test('.reset', function() {
+  expect(2);
+
+  authManager.set('apiKey', 'SOME_KEY');
+  authManager.reset();
+  equal(authManager.get('apiKey'), null, 'Api Key was removed');
+  var authHeader = $.ajaxSetup()['headers']['Authorization'];
+  equal(authHeader, 'Bearer none', 'Authorization header in ajax is reset');
+});
+
+test('.apiKeyObserver', function() {
+  expect(3);
+  equal($.cookie('access_token'), null, 'Access token cookie is null');
+
+  authManager.set('apiKey', { accessToken: 'ACCESS_TOKEN' });
+  equal($.cookie('access_token'), 'ACCESS_TOKEN', 'Access token cookie is ACCESS_TOKEN');
+
+  authManager.set('apiKey', null);
+  equal($.cookie('access_token'), null, 'Access token cookie is null');
+});

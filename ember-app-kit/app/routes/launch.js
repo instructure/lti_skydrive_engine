@@ -1,19 +1,21 @@
-import AuthManager from 'appkit/libs/auth_manager';
-
 var LaunchRoute = Ember.Route.extend({
   setupController: function(controller, model) {
-    var code = model.code;
+    // THIS SHOULD BE CALLED IN THE TEST BUT IT'S NOT!
+    debugger;
+    this.authenticate(model.code);
+    this._super.apply(arguments);
+  },
+
+  authenticate: function(code) {
     if (code === 'na') {
       code = null;
     }
 
     if (Ember.isEmpty(code)) {
-      AuthManager.authenticateWithCookie();
+      App.AuthManager.authenticateWithCookie();
     } else {
-      AuthManager.authenticateWithCode(code);
+      App.AuthManager.authenticateWithCode(code);
     }
-
-    return {};
   }
 });
 
