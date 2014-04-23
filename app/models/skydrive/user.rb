@@ -22,7 +22,7 @@ module Skydrive
     end
 
     def valid_skydrive_token?
-      !self.token.nil? && self.token.is_valid?
+      !!self.token && self.token.is_valid?
     end
   end
 end

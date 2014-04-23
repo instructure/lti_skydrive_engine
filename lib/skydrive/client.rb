@@ -14,7 +14,8 @@ module Skydrive
     end
 
     def oauth_authorize_redirect_uri(redirect_uri, options = {})
-      scope = options[:scope] || 'Web.Read AllSites.Write AllProfiles.Read'
+      #scope = options[:scope] || 'Web.Read AllSites.Write AllProfiles.Read'
+      scope = options[:scope] || 'AllSites.Write AllProfiles.Read'
       state = options[:state]
 
       redirect_params = {
@@ -24,7 +25,12 @@ module Skydrive
           response_type: 'code'
       }
 
-      "https://#{client_domain}/_layouts/15/OAuthAuthorize.aspx?" +
+      # Once during LTI tool installation
+      #"https://#{client_domain}/_layouts/15/OAuthAuthorize.aspx?" +
+      #    redirect_params.map{|k,v| "#{k}=#{CGI::escape(v)}"}.join('&') +
+      #    (state ? "&state=#{state}" : "")
+
+      "https://#{client_domain}/_layouts/15/AppRedirect.aspx?" +
           redirect_params.map{|k,v| "#{k}=#{CGI::escape(v)}"}.join('&') +
           (state ? "&state=#{state}" : "")
     end
