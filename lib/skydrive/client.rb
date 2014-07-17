@@ -2,6 +2,8 @@ require 'rest_client'
 require 'curb'
 require 'json'
 require 'mimemagic'
+require 'jwt'
+
 
 module Skydrive
   class Client
@@ -13,24 +15,17 @@ module Skydrive
       options.each { |key, val| self.send("#{key}=", val) if self.respond_to?("#{key}=") }
     end
 
+    # Used to authorize this app for a sharepoint tenant
     def oauth_authorize_redirect_uri(redirect_uri, options = {})
-      #scope = options[:scope] || 'Web.Read AllSites.Write AllProfiles.Read'
-      scope = options[:scope] || 'AllSites.Write AllProfiles.Read'
+      scope = options[:scope] || 'Web.Read AllSites.Write AllProfiles.Read'
       state = options[:state]
-
       redirect_params = {
           client_id: client_id,
           scope: scope,
           redirect_uri: redirect_uri,
           response_type: 'code'
       }
-
-      # Once during LTI tool installation
-      #"https://#{client_domain}/_layouts/15/OAuthAuthorize.aspx?" +
-      #    redirect_params.map{|k,v| "#{k}=#{CGI::escape(v)}"}.join('&') +
-      #    (state ? "&state=#{state}" : "")
-
-      "https://#{client_domain}/_layouts/15/AppRedirect.aspx?" +
+      "https://#{client_domain}/_layouts/15/OAuthAuthorize.aspx?" +
           redirect_params.map{|k,v| "#{k}=#{CGI::escape(v)}"}.join('&') +
           (state ? "&state=#{state}" : "")
     end
@@ -47,6 +42,59 @@ module Skydrive
           code: code,
           grant_type: 'authorization_code',
           resource: "#{guid}/#{client_domain}@#{realm}",
+      }
+
+      RestClient.post endpoint, options do |response, request, result|
+        log_restclient_response(response, request, result)
+        results = format_results(JSON.parse(response))
+        self.token = results['access_token']
+        results
+      end
+    end
+
+    # Used to obtain an access token for a regular user
+    def app_redirect_uri(redirect_uri, options = {})
+      redirect_params = {
+        client_id: client_id,
+        redirect_uri: redirect_uri + "?state=#{options[:state]}",
+      }
+      # Once during LTI tool installation
+      "https://#{client_domain}/_layouts/15/appredirect.aspx?" +
+        redirect_params.map{|k,v| "#{k}=#{CGI::escape(v)}"}.join('&')
+    end
+
+    def get_token(spAppToken)
+      decoded = JWT.decode(spAppToken, SHAREPOINT[:client_secret], false).first
+      acsServer = JSON.parse(decoded['appctx'])['SecurityTokenServiceUri']
+
+      part1 = '00000003-0000-0ff1-ce00-000000000000'
+      part2 =  client_domain
+      part3 = decoded['appctxsender'].split('@')[1]
+
+      postdata = {'grant_type' => 'refresh_token',
+                  'client_id' => decoded['aud'],
+                  'client_secret' => SHAREPOINT[:client_secret],
+                  'refresh_token' => decoded['refreshtoken'],
+                  'resource' => part1 + '/' + part2 + '@' + part3}
+
+      result = RestClient.post acsServer, postdata
+
+      result = JSON.parse(result)
+      self.token = result['access_token']
+      return result
+      ###
+
+      realm = self.get_realm
+      endpoint = "https://accounts.accesscontrol.windows.net/#{realm}/tokens/OAuth/2"
+
+      options = {
+        content_type: 'application/x-www-form-urlencoded',
+        client_id: "#{client_id}@#{realm}",
+        redirect_uri: redirect_uri,
+        client_secret: client_secret,
+        code: code,
+        grant_type: 'authorization_code',
+        resource: "#{guid}/#{client_domain}@#{realm}",
       }
 
       RestClient.post endpoint, options do |response, request, result|

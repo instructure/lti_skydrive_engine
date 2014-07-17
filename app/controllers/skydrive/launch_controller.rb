@@ -92,7 +92,7 @@ module Skydrive
         render json: {}, status: 201
       else
         code = current_user.api_keys.active.skydrive_oauth.create.oauth_code
-        auth_url = skydrive_client.oauth_authorize_redirect_uri(skydrive_redirect_uri, state: code)
+        auth_url = skydrive_client.app_redirect_uri(skydrive_redirect_uri, state: code)
         render text: auth_url, status: 401
       end
     end
@@ -138,6 +138,21 @@ module Skydrive
       else
         render text: 'The sharepoint_client_domain is a required parameter.'
       end
+    end
+
+    def app_redirect
+      @current_user = ApiKey.trade_oauth_code_for_access_token(params['state']).user
+
+      results = skydrive_client.get_token(params[:SPAppToken])
+
+      unless results.key? 'error'
+        results.merge!(personal_url: skydrive_client.get_user['PersonalUrl'])
+        results['not_before'] = Time.at(results['not_before'].to_i)
+        results['expires_on'] = Time.at(results['expires_on'].to_i)
+        @current_user.token.update_attributes(results)
+      end
+
+      redirect_to "#{root_path}#/oauth/callback"
     end
 
     private

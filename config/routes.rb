@@ -17,6 +17,7 @@ Skydrive::Engine.routes.draw do
   post 'launch' => 'launch#basic_launch'
   get 'backdoor' => 'launch#backdoor_launch'
   get 'microsoft_oauth' => 'launch#microsoft_oauth'
+  post 'microsoft_oauth' => 'launch#app_redirect'
 
   get 'config' => 'launch#xml_config'
 
