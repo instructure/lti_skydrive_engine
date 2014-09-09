@@ -25,6 +25,7 @@ module Skydrive
           redirect_uri: redirect_uri,
           response_type: 'code'
       }
+      # Once during LTI tool installation
       "https://#{client_domain}/_layouts/15/OAuthAuthorize.aspx?" +
           redirect_params.map{|k,v| "#{k}=#{CGI::escape(v)}"}.join('&') +
           (state ? "&state=#{state}" : "")

@@ -116,10 +116,10 @@ module Skydrive
 
       if params['sharepoint_client_domain']
         url = "#{request.protocol}#{request.host_with_port}#{launch_path}"
-        title = "Skydrive Pro"
+        title = "Onedrive Pro"
         tc = IMS::LTI::ToolConfig.new(:title => title, :launch_url => url)
         tc.extend IMS::LTI::Extensions::Canvas::ToolConfig
-        tc.description = 'Allows you to pull in documents from Skydrive Pro to canvas'
+        tc.description = 'Allows you to pull in documents from Onedrive Pro to canvas'
         tc.canvas_privacy_public!
         tc.canvas_domain!(request.host)
         tc.canvas_icon_url!("#{host}assets/skydrive/skydrive_icon.png")

@@ -8,20 +8,22 @@ namespace :skydrive do
       FileUtils.cp Ember::Source.bundled_path_for('ember.min.js'), 'app/assets/javascripts/skydrive/vendor/ember.js'
       puts 'building ember'
       puts `ember build --out-file app/assets/javascripts/skydrive/ember_app.js`
+      puts 'minifying application.js'
+      rewrite_file('app/assets/javascripts/skydrive/ember_app.js') { |f| Uglifier.compile(f) }
 
-      #if(Rails.env.production?)
-      #  puts 'building ember for production'
-      #  FileUtils.cp Ember::Source.bundled_path_for('ember.min.js'), 'public/javascripts/vendor/ember.js'
-      #  puts 'building ember'
-      #  puts `ember build`
-      #  puts 'minifying application.js'
-      #  rewrite_file('public/javascripts/application.js') {|f| Uglifier.compile(f)}
-      #else
-      #  puts 'building ember for development'
-      #  FileUtils.cp Ember::Source.bundled_path_for('ember.js'), 'public/javascripts/vendor/ember.js'
-      #  puts 'building ember'
-      #  puts `ember build -d`
-      #end
+      # if (Rails.env.production?)
+      #   puts 'building ember for production'
+      #   FileUtils.cp Ember::Source.bundled_path_for('ember.min.js'), 'public/javascripts/vendor/ember.js'
+      #   puts 'building ember'
+      #   puts `ember build`
+      #   puts 'minifying application.js'
+      #   rewrite_file('public/javascripts/application.js') { |f| Uglifier.compile(f) }
+      # else
+      #   puts 'building ember for development'
+      #   FileUtils.cp Ember::Source.bundled_path_for('ember.js'), 'public/javascripts/vendor/ember.js'
+      #   puts 'building ember'
+      #   puts `ember build -d`
+      # end
     end
 
     #This doesn't work at present because ember requires an older version of handlebars
