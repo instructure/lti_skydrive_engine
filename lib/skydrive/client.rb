@@ -140,6 +140,7 @@ module Skydrive
                                           {headers: {'Authorization' => 'Bearer'}}
       www_authenticate = {}
       resource.get do |response, request, result|
+        log_restclient_response(response, request, result)
         response.headers[:www_authenticate].scan(/[\w ]*="[^"]*"/).each do |attribute|
           attribute = attribute.split('=')
           www_authenticate[attribute.first] = attribute.last.delete('"')
@@ -160,7 +161,7 @@ module Skydrive
       folder.files = []
       folder.folders = []
 
-      files = api_call(data['Files']['__deferred']['uri'])['results']
+      files = api_call(CGI::unescape(data['Files']['__deferred']['uri']))['results']
       files.each do |f|
         new_file = Skydrive::File.new
         new_file.uri = f['__metadata']['uri']
@@ -174,7 +175,7 @@ module Skydrive
         folder.files << new_file
       end
       
-      sub_folders = api_call(data['Folders']['__deferred']['uri'])['results']
+      sub_folders = api_call(CGI::unescape(data['Folders']['__deferred']['uri']))['results']
       sub_folders.each do |sf|
 
         # Non-recursively

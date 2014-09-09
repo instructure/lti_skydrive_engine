@@ -92,7 +92,7 @@ module Skydrive
         render json: {}, status: 201
       else
         code = current_user.api_keys.active.skydrive_oauth.create.oauth_code
-        auth_url = skydrive_client.app_redirect_uri(skydrive_redirect_uri, state: code)
+        auth_url = skydrive_client.app_redirect_uri(microsoft_oauth_url, state: code)
         render text: auth_url, status: 401
       end
     end
@@ -100,7 +100,7 @@ module Skydrive
     def microsoft_oauth
       @current_user = ApiKey.trade_oauth_code_for_access_token(params['state']).user
 
-      results = skydrive_client.get_token(skydrive_redirect_uri, params['code'])
+      results = skydrive_client.get_token(microsoft_oauth_url, params['code'])
 
       unless results.key? 'error'
         results.merge!(personal_url: skydrive_client.get_user['PersonalUrl'])
@@ -128,7 +128,7 @@ module Skydrive
         tc.canvas_homework_submission!
         #tc.canvas_editor_button!
         #tc.canvas_resource_selection!
-        #tc.canvas_account_navigation!
+        tc.canvas_account_navigation!(url: 'do not know yet')
         #tc.canvas_course_navigation!
         #tc.canvas_user_navigation!
         tc.set_ext_param(
@@ -159,10 +159,6 @@ module Skydrive
 
     def skydrive_client
       @skydrive_client ||= Client.new(SHAREPOINT.merge(client_domain: current_user.token.client_domain))
-    end
-
-    def skydrive_redirect_uri
-      @skydrive_redirect_uri ||= "#{request.protocol}#{request.host_with_port}#{microsoft_oauth_path}"
     end
   end
 end
