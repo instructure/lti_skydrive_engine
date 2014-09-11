@@ -9,11 +9,11 @@ module Skydrive
     def tool_provider
       require 'oauth/request_proxy/rack_request'
 
-      lti_key = LtiKey.where(key: params['oauth_consumer_key']).first
+      @account = Account.where(key: params['oauth_consumer_key']).first
 
-      if lti_key
-        key = lti_key.key
-        secret = lti_key.secret
+      if @account
+        key = @account.key
+        secret = @account.secret
       end
 
       tp = IMS::LTI::ToolProvider.new(key, secret, params)
@@ -51,22 +51,17 @@ module Skydrive
         return
       end
 
-      email = tp.lis_person_contact_email_primary
-      unless email.present?
-        render text: "Missing email information", layout: "skydrive/error"
-        return
-      end
-
       unless client_domain = tp.get_custom_param('sharepoint_client_domain')
         render text: "Missing sharepoint client domain", status: 400, layout: "skydrive/error"
         return
       end
 
-      user = User.where(email: email).first ||
-          User.create!(
+      user = @account.users.where(lti_user_id: tp.user_id).first ||
+          @account.users.create(
+              lti_user_id: tp.user_id,
               name: tp.lis_person_name_full,
               username: tp.user_id,
-              email: email
+              email: tp.lis_person_contact_email_primary,
           )
 
       if user.token
@@ -92,19 +87,41 @@ module Skydrive
         render json: {}, status: 201
       else
         code = current_user.api_keys.active.skydrive_oauth.create.oauth_code
-        auth_url = skydrive_client.app_redirect_uri(microsoft_oauth_url, state: code)
+        if current_user.account.admin
+          #Get the user's access token
+          auth_url = skydrive_client.app_redirect_uri(microsoft_oauth_url, state: code)
+        else
+          #Authorize the tenant
+          auth_url = skydrive_client.oauth_authorize_redirect_uri(microsoft_oauth_url, state: code)
+        end
         render text: auth_url, status: 401
       end
+    end
+
+    def app_redirect
+      @current_user = ApiKey.trade_oauth_code_for_access_token(params['state']).user
+
+      results = skydrive_client.get_token(params[:SPAppToken])
+
+      unless results.key? 'error'
+        results.merge!(personal_url: skydrive_client.get_user['PersonalUrl'])
+        results['not_before'] = Time.at(results['not_before'].to_i)
+        results['expires_on'] = Time.at(results['expires_on'].to_i)
+        @current_user.token.update_attributes(results)
+      end
+
+      redirect_to "#{root_path}#/oauth/callback"
     end
 
     def microsoft_oauth
       @current_user = ApiKey.trade_oauth_code_for_access_token(params['state']).user
 
-      results = skydrive_client.get_token(microsoft_oauth_url, params['code'])
+      results = skydrive_client.authorize_app(microsoft_oauth_url, params['code'])
 
       unless results.key? 'error'
         results.merge!(personal_url: skydrive_client.get_user['PersonalUrl'])
         @current_user.token.update_attributes(results)
+        @current_user.account.update_attributes(admin: @current_user)
       end
 
       redirect_to "#{root_path}#/oauth/callback"
@@ -126,11 +143,7 @@ module Skydrive
         tc.canvas_selector_dimensions!(700,600)
         tc.canvas_text!(title)
         tc.canvas_homework_submission!
-        #tc.canvas_editor_button!
-        #tc.canvas_resource_selection!
-        tc.canvas_account_navigation!(url: 'do not know yet')
-        #tc.canvas_course_navigation!
-        #tc.canvas_user_navigation!
+        tc.canvas_account_navigation!
         tc.set_ext_param(
             IMS::LTI::Extensions::Canvas::ToolConfig::PLATFORM, :custom_fields,
             {sharepoint_client_domain: params['sharepoint_client_domain']})
@@ -138,21 +151,6 @@ module Skydrive
       else
         render text: 'The sharepoint_client_domain is a required parameter.'
       end
-    end
-
-    def app_redirect
-      @current_user = ApiKey.trade_oauth_code_for_access_token(params['state']).user
-
-      results = skydrive_client.get_token(params[:SPAppToken])
-
-      unless results.key? 'error'
-        results.merge!(personal_url: skydrive_client.get_user['PersonalUrl'])
-        results['not_before'] = Time.at(results['not_before'].to_i)
-        results['expires_on'] = Time.at(results['expires_on'].to_i)
-        @current_user.token.update_attributes(results)
-      end
-
-      redirect_to "#{root_path}#/oauth/callback"
     end
 
     private

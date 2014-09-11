@@ -11,7 +11,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140103221052) do
+ActiveRecord::Schema.define(version: 20140910214356) do
+
+  create_table "skydrive_accounts", force: true do |t|
+    t.string  "key"
+    t.string  "secret"
+    t.text    "tool_consumer_instance_guid"
+    t.integer "admin_id"
+  end
+
+  add_index "skydrive_accounts", ["key"], name: "index_skydrive_accounts_on_key"
 
   create_table "skydrive_api_keys", force: true do |t|
     t.integer  "user_id"
@@ -26,13 +35,6 @@ ActiveRecord::Schema.define(version: 20140103221052) do
   add_index "skydrive_api_keys", ["access_token"], name: "index_skydrive_api_keys_on_access_token"
   add_index "skydrive_api_keys", ["oauth_code"], name: "index_skydrive_api_keys_on_oauth_code"
   add_index "skydrive_api_keys", ["user_id"], name: "index_skydrive_api_keys_on_user_id"
-
-  create_table "skydrive_lti_keys", force: true do |t|
-    t.string "key"
-    t.string "secret"
-  end
-
-  add_index "skydrive_lti_keys", ["key"], name: "index_skydrive_lti_keys_on_key"
 
   create_table "skydrive_tokens", force: true do |t|
     t.integer  "user_id"
@@ -55,6 +57,8 @@ ActiveRecord::Schema.define(version: 20140103221052) do
     t.string   "email"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "account_id"
+    t.text     "lti_user_id"
   end
 
 end

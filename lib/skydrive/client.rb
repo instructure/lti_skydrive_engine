@@ -15,7 +15,7 @@ module Skydrive
       options.each { |key, val| self.send("#{key}=", val) if self.respond_to?("#{key}=") }
     end
 
-    # Used to authorize this app for a sharepoint tenant
+    # URL used to authorize this app for a sharepoint tenant
     def oauth_authorize_redirect_uri(redirect_uri, options = {})
       scope = options[:scope] || 'Web.Read AllSites.Write AllProfiles.Read'
       state = options[:state]
@@ -25,13 +25,14 @@ module Skydrive
           redirect_uri: redirect_uri,
           response_type: 'code'
       }
-      # Once during LTI tool installation
       "https://#{client_domain}/_layouts/15/OAuthAuthorize.aspx?" +
           redirect_params.map{|k,v| "#{k}=#{CGI::escape(v)}"}.join('&') +
           (state ? "&state=#{state}" : "")
     end
 
-    def get_token(redirect_uri, code)
+    # Service call for trading the OAuth 2 code for a token
+    # This is used to authorize the app for a sharepoint tenant
+    def authorize_app(redirect_uri, code)
       realm = self.get_realm
       endpoint = "https://accounts.accesscontrol.windows.net/#{realm}/tokens/OAuth/2"
 
@@ -53,17 +54,18 @@ module Skydrive
       end
     end
 
-    # Used to obtain an access token for a regular user
+    # URL used to obtain an access token for a regular user
     def app_redirect_uri(redirect_uri, options = {})
       redirect_params = {
         client_id: client_id,
         redirect_uri: redirect_uri + "?state=#{options[:state]}",
       }
-      # Once during LTI tool installation
+
       "https://#{client_domain}/_layouts/15/appredirect.aspx?" +
         redirect_params.map{|k,v| "#{k}=#{CGI::escape(v)}"}.join('&')
     end
 
+    # Service call for trading generating a token for a regular user
     def get_token(spAppToken)
       decoded = JWT.decode(spAppToken, SHAREPOINT[:client_secret], false).first
       acsServer = JSON.parse(decoded['appctx'])['SecurityTokenServiceUri']
@@ -78,10 +80,14 @@ module Skydrive
                   'refresh_token' => decoded['refreshtoken'],
                   'resource' => part1 + '/' + part2 + '@' + part3}
 
-      result = RestClient.post acsServer, postdata
+      result = RestClient.post acsServer, postdata do |response, request, result|
+        require 'pry'; binding.pry
+        log_restclient_response(response, request, result)
+        result = JSON.parse(response)
+        self.token = result['access_token']
+        result
+      end
 
-      result = JSON.parse(result)
-      self.token = result['access_token']
       return result
       ###
 
