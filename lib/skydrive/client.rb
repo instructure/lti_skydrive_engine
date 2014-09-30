@@ -54,6 +54,28 @@ module Skydrive
       end
     end
 
+    # Service call for refreshing an admin oauth2 token
+    def refresh_token(refresh_token)
+      realm = self.get_realm
+      endpoint = "https://accounts.accesscontrol.windows.net/#{realm}/tokens/OAuth/2"
+
+      options = {
+          content_type: 'application/x-www-form-urlencoded',
+          client_id: "#{client_id}@#{realm}",
+          client_secret: client_secret,
+          refresh_token: refresh_token,
+          grant_type: 'refresh_token',
+          resource: "#{guid}/#{client_domain}@#{realm}",
+      }
+
+      RestClient.post endpoint, options do |response, request, result|
+        log_restclient_response(response, request, result)
+        results = format_results(JSON.parse(response))
+        self.token = results['access_token']
+        results
+      end
+    end
+
     # URL used to obtain an access token for a regular user
     def app_redirect_uri(redirect_uri, options = {})
       redirect_params = {
@@ -81,7 +103,6 @@ module Skydrive
                   'resource' => part1 + '/' + part2 + '@' + part3}
 
       result = RestClient.post acsServer, postdata do |response, request, result|
-        require 'pry'; binding.pry
         log_restclient_response(response, request, result)
         result = JSON.parse(response)
         self.token = result['access_token']
@@ -89,48 +110,6 @@ module Skydrive
       end
 
       return result
-      ###
-
-      realm = self.get_realm
-      endpoint = "https://accounts.accesscontrol.windows.net/#{realm}/tokens/OAuth/2"
-
-      options = {
-        content_type: 'application/x-www-form-urlencoded',
-        client_id: "#{client_id}@#{realm}",
-        redirect_uri: redirect_uri,
-        client_secret: client_secret,
-        code: code,
-        grant_type: 'authorization_code',
-        resource: "#{guid}/#{client_domain}@#{realm}",
-      }
-
-      RestClient.post endpoint, options do |response, request, result|
-        log_restclient_response(response, request, result)
-        results = format_results(JSON.parse(response))
-        self.token = results['access_token']
-        results
-      end
-    end
-
-    def refresh_token(refresh_token)
-      realm = self.get_realm
-      endpoint = "https://accounts.accesscontrol.windows.net/#{realm}/tokens/OAuth/2"
-
-      options = {
-          content_type: 'application/x-www-form-urlencoded',
-          client_id: "#{client_id}@#{realm}",
-          client_secret: client_secret,
-          refresh_token: refresh_token,
-          grant_type: 'refresh_token',
-          resource: "#{guid}/#{client_domain}@#{realm}",
-      }
-
-      RestClient.post endpoint, options do |response, request, result|
-        log_restclient_response(response, request, result)
-        results = format_results(JSON.parse(response))
-        self.token = results['access_token']
-        results
-      end
     end
 
     def format_results(results)

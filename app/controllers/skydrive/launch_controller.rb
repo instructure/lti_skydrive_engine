@@ -78,9 +78,7 @@ module Skydrive
     def skydrive_authorized
       skydrive_token = current_user.token
       if skydrive_token && skydrive_token.requires_refresh?
-        results = skydrive_client.refresh_token(skydrive_token.refresh_token)
-        return render json: results if results.key? 'error'
-        skydrive_token.update_attributes(results)
+        skydrive_token.refresh!(skydrive_client)
       end
 
       if skydrive_token && skydrive_token.is_valid?
@@ -101,14 +99,11 @@ module Skydrive
     def app_redirect
       @current_user = ApiKey.trade_oauth_code_for_access_token(params['state']).user
 
-      results = skydrive_client.get_token(params[:SPAppToken])
+      token = @current_user.token
 
-      unless results.key? 'error'
-        results.merge!(personal_url: skydrive_client.get_user['PersonalUrl'])
-        results['not_before'] = Time.at(results['not_before'].to_i)
-        results['expires_on'] = Time.at(results['expires_on'].to_i)
-        @current_user.token.update_attributes(results)
-      end
+      token.token_type = Token::USER
+      token.refresh_token = params[:SPAppToken]
+      token.refresh!(skydrive_client)
 
       redirect_to "#{root_path}#/oauth/callback"
     end
@@ -119,7 +114,7 @@ module Skydrive
       results = skydrive_client.authorize_app(microsoft_oauth_url, params['code'])
 
       unless results.key? 'error'
-        results.merge!(personal_url: skydrive_client.get_user['PersonalUrl'])
+        results.merge!(token_type: Token::ADMIN, personal_url: skydrive_client.get_user['PersonalUrl'])
         @current_user.token.update_attributes(results)
         @current_user.account.update_attributes(admin: @current_user)
       end
@@ -151,12 +146,6 @@ module Skydrive
       else
         render text: 'The sharepoint_client_domain is a required parameter.'
       end
-    end
-
-    private
-
-    def skydrive_client
-      @skydrive_client ||= Client.new(SHAREPOINT.merge(client_domain: current_user.token.client_domain))
     end
   end
 end
