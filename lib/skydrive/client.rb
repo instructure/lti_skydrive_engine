@@ -15,7 +15,7 @@ module Skydrive
       options.each { |key, val| self.send("#{key}=", val) if self.respond_to?("#{key}=") }
     end
 
-    # Used to authorize this app for a sharepoint tenant
+    # URL used to authorize this app for a sharepoint tenant
     def oauth_authorize_redirect_uri(redirect_uri, options = {})
       scope = options[:scope] || 'Web.Read AllSites.Write AllProfiles.Read'
       state = options[:state]
@@ -30,7 +30,9 @@ module Skydrive
           (state ? "&state=#{state}" : "")
     end
 
-    def get_token(redirect_uri, code)
+    # Service call for trading the OAuth 2 code for a token
+    # This is used to authorize the app for a sharepoint tenant
+    def authorize_app(redirect_uri, code)
       realm = self.get_realm
       endpoint = "https://accounts.accesscontrol.windows.net/#{realm}/tokens/OAuth/2"
 
@@ -52,59 +54,7 @@ module Skydrive
       end
     end
 
-    # Used to obtain an access token for a regular user
-    def app_redirect_uri(redirect_uri, options = {})
-      redirect_params = {
-        client_id: client_id,
-        redirect_uri: redirect_uri + "?state=#{options[:state]}",
-      }
-      # Once during LTI tool installation
-      "https://#{client_domain}/_layouts/15/appredirect.aspx?" +
-        redirect_params.map{|k,v| "#{k}=#{CGI::escape(v)}"}.join('&')
-    end
-
-    def get_token(spAppToken)
-      decoded = JWT.decode(spAppToken, SHAREPOINT[:client_secret], false).first
-      acsServer = JSON.parse(decoded['appctx'])['SecurityTokenServiceUri']
-
-      part1 = '00000003-0000-0ff1-ce00-000000000000'
-      part2 =  client_domain
-      part3 = decoded['appctxsender'].split('@')[1]
-
-      postdata = {'grant_type' => 'refresh_token',
-                  'client_id' => decoded['aud'],
-                  'client_secret' => SHAREPOINT[:client_secret],
-                  'refresh_token' => decoded['refreshtoken'],
-                  'resource' => part1 + '/' + part2 + '@' + part3}
-
-      result = RestClient.post acsServer, postdata
-
-      result = JSON.parse(result)
-      self.token = result['access_token']
-      return result
-      ###
-
-      realm = self.get_realm
-      endpoint = "https://accounts.accesscontrol.windows.net/#{realm}/tokens/OAuth/2"
-
-      options = {
-        content_type: 'application/x-www-form-urlencoded',
-        client_id: "#{client_id}@#{realm}",
-        redirect_uri: redirect_uri,
-        client_secret: client_secret,
-        code: code,
-        grant_type: 'authorization_code',
-        resource: "#{guid}/#{client_domain}@#{realm}",
-      }
-
-      RestClient.post endpoint, options do |response, request, result|
-        log_restclient_response(response, request, result)
-        results = format_results(JSON.parse(response))
-        self.token = results['access_token']
-        results
-      end
-    end
-
+    # Service call for refreshing an admin oauth2 token
     def refresh_token(refresh_token)
       realm = self.get_realm
       endpoint = "https://accounts.accesscontrol.windows.net/#{realm}/tokens/OAuth/2"
@@ -126,6 +76,42 @@ module Skydrive
       end
     end
 
+    # URL used to obtain an access token for a regular user
+    def app_redirect_uri(redirect_uri, options = {})
+      redirect_params = {
+        client_id: client_id,
+        redirect_uri: redirect_uri + "?state=#{options[:state]}",
+      }
+
+      "https://#{client_domain}/_layouts/15/appredirect.aspx?" +
+        redirect_params.map{|k,v| "#{k}=#{CGI::escape(v)}"}.join('&')
+    end
+
+    # Service call for trading generating a token for a regular user
+    def get_token(spAppToken)
+      decoded = JWT.decode(spAppToken, SHAREPOINT[:client_secret], false).first
+      acsServer = JSON.parse(decoded['appctx'])['SecurityTokenServiceUri']
+
+      part1 = '00000003-0000-0ff1-ce00-000000000000'
+      part2 =  client_domain
+      part3 = decoded['appctxsender'].split('@')[1]
+
+      postdata = {'grant_type' => 'refresh_token',
+                  'client_id' => decoded['aud'],
+                  'client_secret' => SHAREPOINT[:client_secret],
+                  'refresh_token' => decoded['refreshtoken'],
+                  'resource' => part1 + '/' + part2 + '@' + part3}
+
+      result = RestClient.post acsServer, postdata do |response, request, result|
+        log_restclient_response(response, request, result)
+        result = JSON.parse(response)
+        self.token = result['access_token']
+        result
+      end
+
+      return result
+    end
+
     def format_results(results)
       results["expires_in"] = results["expires_in"].to_i
       results["not_before"] = Time.at results["not_before"].to_i
@@ -139,6 +125,7 @@ module Skydrive
                                           {headers: {'Authorization' => 'Bearer'}}
       www_authenticate = {}
       resource.get do |response, request, result|
+        log_restclient_response(response, request, result)
         response.headers[:www_authenticate].scan(/[\w ]*="[^"]*"/).each do |attribute|
           attribute = attribute.split('=')
           www_authenticate[attribute.first] = attribute.last.delete('"')
@@ -159,7 +146,7 @@ module Skydrive
       folder.files = []
       folder.folders = []
 
-      files = api_call(data['Files']['__deferred']['uri'])['results']
+      files = api_call(CGI::unescape(data['Files']['__deferred']['uri']))['results']
       files.each do |f|
         new_file = Skydrive::File.new
         new_file.uri = f['__metadata']['uri']
@@ -173,7 +160,7 @@ module Skydrive
         folder.files << new_file
       end
       
-      sub_folders = api_call(data['Folders']['__deferred']['uri'])['results']
+      sub_folders = api_call(CGI::unescape(data['Folders']['__deferred']['uri']))['results']
       sub_folders.each do |sf|
 
         # Non-recursively

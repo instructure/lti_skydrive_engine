@@ -3,6 +3,6 @@
 
 require File.expand_path("../../config/environment", __FILE__)
 
-key = LtiKey.new_key
+key = Account.new_key
 puts "key:    #{key.key}"
 puts "secret: #{key.secret}"
