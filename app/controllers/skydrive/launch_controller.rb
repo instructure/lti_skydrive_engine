@@ -9,11 +9,11 @@ module Skydrive
     def tool_provider
       require 'oauth/request_proxy/rack_request'
 
-      lti_key = LtiKey.where(key: params['oauth_consumer_key']).first
+      @account = Account.where(key: params['oauth_consumer_key']).first
 
-      if lti_key
-        key = lti_key.key
-        secret = lti_key.secret
+      if @account
+        key = @account.key
+        secret = @account.secret
       end
 
       tp = IMS::LTI::ToolProvider.new(key, secret, params)
@@ -51,22 +51,17 @@ module Skydrive
         return
       end
 
-      email = tp.lis_person_contact_email_primary
-      unless email.present?
-        render text: "Missing email information", layout: "skydrive/error"
-        return
-      end
-
       unless client_domain = tp.get_custom_param('sharepoint_client_domain')
         render text: "Missing sharepoint client domain", status: 400, layout: "skydrive/error"
         return
       end
 
-      user = User.where(email: email).first ||
-          User.create!(
+      user = @account.users.where(lti_user_id: tp.user_id).first ||
+          @account.users.create(
+              lti_user_id: tp.user_id,
               name: tp.lis_person_name_full,
               username: tp.user_id,
-              email: email
+              email: tp.lis_person_contact_email_primary,
           )
 
       if user.token
@@ -83,28 +78,45 @@ module Skydrive
     def skydrive_authorized
       skydrive_token = current_user.token
       if skydrive_token && skydrive_token.requires_refresh?
-        results = skydrive_client.refresh_token(skydrive_token.refresh_token)
-        return render json: results if results.key? 'error'
-        skydrive_token.update_attributes(results)
+        skydrive_token.refresh!(skydrive_client)
       end
 
       if skydrive_token && skydrive_token.is_valid?
         render json: {}, status: 201
       else
         code = current_user.api_keys.active.skydrive_oauth.create.oauth_code
-        auth_url = skydrive_client.oauth_authorize_redirect_uri(skydrive_redirect_uri, state: code)
+        if current_user.account.admin
+          #Get the user's access token
+          auth_url = skydrive_client.app_redirect_uri(microsoft_oauth_url, state: code)
+        else
+          #Authorize the tenant
+          auth_url = skydrive_client.oauth_authorize_redirect_uri(microsoft_oauth_url, state: code)
+        end
         render text: auth_url, status: 401
       end
+    end
+
+    def app_redirect
+      @current_user = ApiKey.trade_oauth_code_for_access_token(params['state']).user
+
+      token = @current_user.token
+
+      token.token_type = Token::USER
+      token.refresh_token = params[:SPAppToken]
+      token.refresh!(skydrive_client)
+
+      redirect_to "#{root_path}#/oauth/callback"
     end
 
     def microsoft_oauth
       @current_user = ApiKey.trade_oauth_code_for_access_token(params['state']).user
 
-      results = skydrive_client.get_token(skydrive_redirect_uri, params['code'])
+      results = skydrive_client.authorize_app(microsoft_oauth_url, params['code'])
 
       unless results.key? 'error'
-        results.merge!(personal_url: skydrive_client.get_user['PersonalUrl'])
+        results.merge!(token_type: Token::ADMIN, personal_url: skydrive_client.get_user['PersonalUrl'])
         @current_user.token.update_attributes(results)
+        @current_user.account.update_attributes(admin: @current_user)
       end
 
       redirect_to "#{root_path}#/oauth/callback"
@@ -116,21 +128,18 @@ module Skydrive
 
       if params['sharepoint_client_domain']
         url = "#{request.protocol}#{request.host_with_port}#{launch_path}"
-        title = "Skydrive Pro"
+        title = "Onedrive Pro"
         tc = IMS::LTI::ToolConfig.new(:title => title, :launch_url => url)
         tc.extend IMS::LTI::Extensions::Canvas::ToolConfig
-        tc.description = 'Allows you to pull in documents from Skydrive Pro to canvas'
+        tc.description = 'Allows you to pull in documents from Onedrive Pro to canvas'
         tc.canvas_privacy_public!
         tc.canvas_domain!(request.host)
         tc.canvas_icon_url!("#{host}assets/skydrive/skydrive_icon.png")
         tc.canvas_selector_dimensions!(700,600)
         tc.canvas_text!(title)
         tc.canvas_homework_submission!
-        #tc.canvas_editor_button!
-        #tc.canvas_resource_selection!
-        #tc.canvas_account_navigation!
-        #tc.canvas_course_navigation!
-        #tc.canvas_user_navigation!
+        tc.canvas_account_navigation!
+        tc.canvas_course_navigation!(visibility: 'admin')
         tc.set_ext_param(
             IMS::LTI::Extensions::Canvas::ToolConfig::PLATFORM, :custom_fields,
             {sharepoint_client_domain: params['sharepoint_client_domain']})
@@ -138,16 +147,6 @@ module Skydrive
       else
         render text: 'The sharepoint_client_domain is a required parameter.'
       end
-    end
-
-    private
-
-    def skydrive_client
-      @skydrive_client ||= Client.new(SHAREPOINT.merge(client_domain: current_user.token.client_domain))
-    end
-
-    def skydrive_redirect_uri
-      @skydrive_redirect_uri ||= "#{request.protocol}#{request.host_with_port}#{microsoft_oauth_path}"
     end
   end
 end

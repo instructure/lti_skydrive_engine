@@ -9,15 +9,8 @@ module Skydrive
       head :unauthorized unless current_user.valid_skydrive_token?
 
       if current_user.token && current_user.token.not_before > Time.now
-        results = client.refresh_token(current_user.token.refresh_token)
-        current_user.token.update_attributes(results)
+        current_user.token.refresh!(skydrive_client)
       end
-    end
-
-    def client
-      @client ||= Skydrive::Client.new(SHAREPOINT.merge(
-                       client_domain: current_user.token.client_domain,
-                       token: current_user.token.access_token))
     end
 
     def index
@@ -26,11 +19,11 @@ module Skydrive
       has_parent = true
       unless uri.present?
         personal_url = current_user.token.personal_url
-        data = client.api_call(personal_url + "_api/web/lists/Documents/")
+        data = skydrive_client.api_call(personal_url + "_api/web/lists/Documents/")
         uri = data['RootFolder']['__deferred']['uri']
         has_parent = false
       end
-      folder = client.get_folder_and_files(uri)
+      folder = skydrive_client.get_folder_and_files(uri)
       folder.parent_uri = nil unless has_parent
 
       tp = IMS::LTI::ToolProvider.new(nil, nil, current_api_key.params)

@@ -55,7 +55,7 @@ var FilesController = Ember.ObjectController.extend({
   }.property('App.AuthManager.apiKey'),
 
   openAuthPopup: function() {
-    var popup = window.open(this.get('authRedirectUrl'), 'auth', 'width=755,height=500');
+    var popup = window.open(this.get('authRedirectUrl'), 'auth', 'width=795,height=500');
     this.set('popupWindow', popup);
   }
 
@@ -126,25 +126,29 @@ var AuthManager = Ember.Object.extend({
 
   // Determine if the user is currently authenticated.
   isAuthenticated: function() {
-    return !Ember.isEmpty(this.get('apiKey.accessToken'));
+    return (!Ember.isEmpty(this.get('apiKey.accessToken')) && !this.get('isAuthenticating'));
   },
 
   authenticateWithCode: function(code) {
+    this.set('isAuthenticating', true);
     $.post('oauth2/token', {code: code})
       .always($.proxy(function(response) {
         if(!Ember.isEmpty(response.api_key)){
           this.authenticate(response.api_key.access_token);
         } else {
-          this.authenticateWithCookie()
+          this.authenticateWithCookie();
         }
+        this.set('isAuthenticating', false);
       }, this));
   },
 
   authenticateWithCookie: function() {
+    this.set('isAuthenticating', true);
     var accessToken = $.cookie('access_token');
     if (!Ember.isEmpty(accessToken)) {
       this.authenticate(accessToken);
     }
+    this.set('isAuthenticating', false);
   },
 
   // Authenticate the user. Once they are authenticated, set the access token to be submitted with all
@@ -191,6 +195,7 @@ var AuthManager = Ember.Object.extend({
 //};
 
 module.exports = AuthManager;
+
 },{"../models/user":10}],9:[function(require,module,exports){
 // Ember.Object instead of DS.Model because this will never persist to or query the server
 var ApiKey = Ember.Object.extend({
@@ -209,7 +214,7 @@ var User = Ember.Model.extend({
 });
 
 User.reopenClass({
-  url:            "/api/v1/users",
+  url:            Ember.ENV.CONFIG.root_path + "api/v1/users",
   adapter:        Ember.RESTAdapter.create(),
   rootKey:        "user",
   collectionKey:  "users",
@@ -230,6 +235,7 @@ User.reopenClass({
 });
 
 module.exports = User;
+
 },{}],11:[function(require,module,exports){
 var AuthManager = require('../lib/auth_manager');
 
@@ -275,19 +281,27 @@ var FilesRoute = AuthenticatedRoute.extend({
 
   setupController: function(controller, model) {
     var uri = model.uri;
-    host = window.ENV.CONFIG.host;
-    var skydriveAuthorized = Ember.$.getJSON(host + 'api/v1/skydrive_authorized').then(
+    path = Ember.ENV.CONFIG.root_path;
+    controller.set('isLoading', true);
+    var skydriveAuthorized = Ember.$.getJSON(path + 'api/v1/skydrive_authorized').then(
       function() {
-        controller.set('isLoading', true);
-        Ember.$.getJSON(host + 'api/v1/files/' + uri).then(function(data) {
-          controller.set('model', data);
-          controller.set('isLoading', false);
-        })
+        Ember.$.getJSON(path + 'api/v1/files/' + uri).then(
+          function(data) {
+            controller.set('model', data);
+            controller.set('isLoading', false);
+          },
+          function(jqxhr) {
+            controller.set('model', {});
+            controller.set('authRedirectUrl', jqxhr.responseText);
+            controller.set('isLoading', false);
+          }
+        );
         controller.set('authRedirectUrl', null);
       },
       function(jqxhr) {
         controller.set('model', {});
         controller.set('authRedirectUrl', jqxhr.responseText);
+        controller.set('isLoading', false);
       }
     );
   },
@@ -304,14 +318,28 @@ var FilesRoute = AuthenticatedRoute.extend({
       if (popupWindow) {
         popupWindow.close();
       }
-      host = window.ENV.CONFIG.host;
+      path = Ember.ENV.CONFIG.root_path;
       ctrl.set('authRedirectUrl', null);
       ctrl.set('popupWindow', null);
       ctrl.set('isLoading', true);
-      ctrl.set('model', Ember.$.getJSON(host + 'api/v1/files').then(function(data) {
-        ctrl.set('model', data); 
-        ctrl.set('isLoading', false);
-      }));
+      Ember.$.getJSON(path + 'api/v1/files').then(
+        function(data) {
+          ctrl.set('model', data); 
+          ctrl.set('isLoading', false);
+        },
+
+        // The user did not authorize Microsoft
+        function(jqxhr) {
+          Ember.$.getJSON(path + 'api/v1/skydrive_authorized').then(
+            function(data) {},
+            function(jqxhr) {
+              ctrl.set('model', {});
+              ctrl.set('authRedirectUrl', jqxhr.responseText);
+              ctrl.set('isLoading', false);
+            }.bind(this)
+          );
+        }.bind(this)
+       );
     }
   }
 });
@@ -476,7 +504,7 @@ function program10(depth0,data) {
 function program11(depth0,data) {
   
   
-  data.buffer.push("<img src=\"/images/icon-folder-back.png\" class=\"icon\" align=\"top\"> &hellip;");
+  data.buffer.push("<img src=\"/assets/skydrive/icon-folder-back.png\" class=\"icon\" align=\"top\"> &hellip;");
   }
 
 function program13(depth0,data) {
@@ -545,7 +573,7 @@ function program16(depth0,data) {
   return buffer;
   }
 
-  data.buffer.push("<nav class=\"top-bar\">\n  <img src=\"https://p.sfx.ms/images/SkyDriveLogoLight.png\" />\n  <span class=\"right\">");
+  data.buffer.push("<nav class=\"top-bar\">\n  <img src=\"/assets/skydrive/banner-white.png\" />\n  <span class=\"right\">");
   hashContexts = {'email': depth0,'s': depth0};
   hashTypes = {'email': "ID",'s': "STRING"};
   options = {hash:{
@@ -558,6 +586,7 @@ function program16(depth0,data) {
   hashContexts = {};
   stack2 = helpers['if'].call(depth0, "authRedirectUrl", {hash:{},inverse:self.program(3, program3, data),fn:self.program(1, program1, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack2 || stack2 === 0) { data.buffer.push(stack2); }
+  data.buffer.push("\n");
   return buffer;
   
 });
@@ -578,7 +607,7 @@ helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
   
 
 
-  data.buffer.push("<nav class=\"top-bar\">\n  <img src=\"https://p.sfx.ms/images/SkyDriveLogoLight.png\" />\n</nav>\n\n<ul class=\"breadcrumbs\">\n  <li>&nbsp;</li>\n</ul>\n\n<p class=\"text-center\">You're not in a system that supports automated LTI autentication.<br/>This is likely due to the app not being launched with an LMS iframe.</p>\n");
+  data.buffer.push("<nav class=\"top-bar\">\n  <img src=\"/assets/skydrive/banner-white.png\" />\n</nav>\n\n<ul class=\"breadcrumbs\">\n  <li>&nbsp;</li>\n</ul>\n\n<p class=\"text-center\">You're not in a system that supports automated LTI autentication.<br/>This is likely due to the app not being launched with an LMS iframe.</p>\n");
   
 });
 

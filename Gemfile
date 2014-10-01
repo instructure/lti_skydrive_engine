@@ -12,6 +12,7 @@ gemspec
 
 # To use debugger
 # gem 'debugger'
+gem 'thin'
 
 group :development do
   gem 'guard-embertools'

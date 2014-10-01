@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency "rest-client"
   s.add_dependency "curb"
   s.add_dependency "mimemagic"
+  s.add_dependency "jwt"
   
   s.add_development_dependency "sqlite3"
 end
