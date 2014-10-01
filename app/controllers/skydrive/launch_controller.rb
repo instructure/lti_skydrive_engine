@@ -139,6 +139,7 @@ module Skydrive
         tc.canvas_text!(title)
         tc.canvas_homework_submission!
         tc.canvas_account_navigation!
+        tc.canvas_course_navigation!(visibility: 'admin')
         tc.set_ext_param(
             IMS::LTI::Extensions::Canvas::ToolConfig::PLATFORM, :custom_fields,
             {sharepoint_client_domain: params['sharepoint_client_domain']})
