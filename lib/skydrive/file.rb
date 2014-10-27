@@ -13,22 +13,22 @@ module Skydrive
         if mm.image?
           case mm.to_s
             when 'image/png'
-              self.icon = "/assets/skydrive/icon-png.png"
+              self.icon = "png"
             when 'image/jpeg'
-              self.icon = "/assets/skydrive/icon-jpg.png"
+              self.icon = "jpg"
             else
-              self.icon = "/assets/skydrive/icon-jpg.png"
+              self.icon = "jpg"
           end
         elsif mm.text? || mm.subtype == "msword"
           if mm.extensions & ['doc', 'docx']
-            self.icon = "/assets/skydrive/icon-word.png"
+            self.icon = "word"
           else
-            self.icon = "/assets/skydrive/icon-file.png"
+            self.icon = "file"
           end
         elsif mm.to_s == 'application/pdf'
-          self.icon = "/assets/skydrive/icon-pdf.png"
+          self.icon = "pdf"
         else
-          self.icon = "/assets/skydrive/icon-file.png"
+          self.icon = "file"
         end
         self.kind = mm.comment
         self.suffix = mm.extensions.last
@@ -39,7 +39,7 @@ module Skydrive
           self.is_embeddable = false
         end
       else
-        self.icon = "/assets/skydrive/icon-file.png"
+        self.icon = "file"
         self.kind = ''
         self.suffix = self.name.split('.').try(:last) || ''
         self.is_embeddable = false

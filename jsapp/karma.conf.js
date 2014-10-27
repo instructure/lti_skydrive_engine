@@ -24,7 +24,13 @@ module.exports = function(config) {
       cache: true,
       module: {
         loaders: [
-          {test: /\.js$/, loader: 'jsx-loader'}
+          { test: /\.less$/,   loader: 'style-loader!css-loader!less-loader' },
+          { test: /\.js$/,     loader: 'jsx-loader' },
+          { test: /\.woff$/,   loader: 'url-loader?limit=10000&minetype=application/font-woff' },
+          { test: /\.ttf$/,    loader: 'file-loader' },
+          { test: /\.eot$/,    loader: 'file-loader' },
+          { test: /\.svg$/,    loader: 'file-loader' },
+          { test: /\.png$/,    loader: "url-loader?mimetype=image/png" }
         ]
       }
     },
@@ -35,7 +41,12 @@ module.exports = function(config) {
       }
     },
 
-    reporters: ['progress'],
+    reporters: ['mocha'],
+
+    // reporter options
+    mochaReporter: {
+      output: 'autowatch'
+    },
 
     port: 9876,
 
@@ -45,7 +56,7 @@ module.exports = function(config) {
 
     autoWatch: true,
 
-    browsers: ['Firefox'],
+    browsers: ['Chrome'],
 
     captureTimeout: 60000,
 
@@ -55,7 +66,8 @@ module.exports = function(config) {
       require("karma-mocha"),
       require("karma-chrome-launcher"),
       require("karma-firefox-launcher"),
-      require("karma-webpack")
+      require("karma-webpack"),
+      require("karma-mocha-reporter")
     ]
   });
 };

@@ -85,6 +85,7 @@ module Skydrive
         render json: {}, status: 201
       else
         code = current_user.api_keys.active.skydrive_oauth.create.oauth_code
+
         if current_user.account.admin
           #Get the user's access token
           auth_url = skydrive_client.app_redirect_uri(microsoft_oauth_url, state: code)
