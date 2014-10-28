@@ -12,11 +12,13 @@ var Launch = module.exports = React.createClass({
     store.authenticateWithCode(this.props.params.code).then(
       function() {
         store.authorizeOneDrive().then(
-          function(results) {
-            this.transitionTo('files');
+          function(response) {
+            store.setState({ authRedirectUrl: null });
+            this.transitionTo(store.getState().mountPath + 'files?uri=root');
           }.bind(this),
-          function(err) {
-            debugger;
+          function(response) {
+            store.setState({ authRedirectUrl: response.data });
+            this.transitionTo('login');
           }.bind(this)
         );
       }.bind(this),

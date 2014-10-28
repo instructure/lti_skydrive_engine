@@ -1,10 +1,12 @@
 /** @jsx React.DOM */
 
 var React = require('react');
-
 var store = require('../lib/OneDriveStore');
+var Navigation = require('react-router').Navigation;
 
 var Login = module.exports = React.createClass({
+  mixins: [Navigation],
+
   getInitialState: function() {
     return store.getState();
   },
@@ -15,18 +17,20 @@ var Login = module.exports = React.createClass({
 
   componentDidMount: function() {
     store.addChangeListener(this.onChange);
-    store.authorizeOneDrive().then(
-      function(files) {
-        console.log(files);
-      },
-      function(authRedirectUrl) {
-        console.log(authRedirectUrl);
-      }
-    );
   },
 
   componentWillUnmount: function() {
     store.removeChangeListener(this.onChange);
+  },
+
+  openAuthPopup: function() {
+    var popup = window.open(store.getState().authRedirectUrl, 'auth', 'width=795,height=500');
+    window.completeLogin = this.completeLogin;
+    store.setState({ popupWindow: popup });
+  },
+
+  completeLogin: function() {
+    this.transitionTo(store.getState().mountPath + 'files?uri=root');
   },
 
   render: function() {
@@ -34,7 +38,7 @@ var Login = module.exports = React.createClass({
       <div className="Login">
         <p className="text-center">You must first log into your OneDrive account.</p>
         <div className="text-center">
-          <button className="btn btn-lg btn-primary">Login</button>
+          <button className="btn btn-lg btn-primary" onClick={this.openAuthPopup}>Login</button>
         </div>
       </div>
     );

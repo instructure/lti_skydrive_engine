@@ -3,11 +3,6 @@ require_dependency "skydrive/application_controller"
 module Skydrive
   class EmberController < ApplicationController
     def index
-      @env = {
-        'CONFIG' => {
-          root_path: root_path
-        }
-      }
     end
 
     def health_check

@@ -1,0 +1,28 @@
+@import "../variables";
+
+.FileTableRow {
+  &.disabled {
+    td {
+      color: #666666;
+    }
+    a.btn {
+      display: none;
+    }
+  }
+  a.btn {
+    text-decoration: none;
+    padding: 0px 10px;
+    .icon-download {
+      height: 20px;
+      width: 20px;
+      padding: 0px;
+      margin: 0px;
+      position: relative;
+      top: 3px;
+      line-height: 12px;
+      path {
+        fill: white;
+      }
+    }
+  }
+}

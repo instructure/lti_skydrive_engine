@@ -4,7 +4,9 @@ var React = require('react')
   , Navigation = require('react-router').Navigation
   , store = require('../lib/OneDriveStore')
   , FolderTableRow = require('./FolderTableRow')
-  , FileTableRow = require('./FileTableRow');
+  , ParentTableRow = require('./ParentTableRow')
+  , FileTableRow = require('./FileTableRow')
+  , Spinner = require('./Spinner');
 
 var Files = module.exports = React.createClass({
 
@@ -31,9 +33,7 @@ var Files = module.exports = React.createClass({
   componentDidMount: function() {
     console.log("componentDidMount");
     store.addChangeListener(this.onChange);
-    store.setState({
-      uri: (this.props.params.splat || 'root')
-    });
+    store.changeUri(this.props.params.splat || 'root');
   },
 
   componentWillUnmount: function() {
@@ -42,38 +42,55 @@ var Files = module.exports = React.createClass({
   },
 
   render: function() {
-    console.log("render");
-
     var folderRows = function() {
-      console.log("folderRows");
-      return store.getState().data.folders.map(function(f, index) {
-        return <FolderTableRow key={index} folder={f} />
-      });
+      if (store.getState().data) {
+        return store.getState().data.folders.map(function(f, index) {
+          return <FolderTableRow key={index} folder={f} />
+        });
+      }
     };
 
     var fileRows = function() {
-      console.log("fileRows");
-      return store.getState().data.files.map(function(f, index) {
-        return <FileTableRow key={index} file={f} />
-      });
+      if (store.getState().data) {
+        return store.getState().data.files.map(function(f, index) {
+          return <FileTableRow key={index} file={f} />
+        });
+      }
     };
 
-    return (
-      <div className="Files">
-        <table className="Files__List table table-striped table-bordered table-hover">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Kind</th>
-              <th>Size (Kb)</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>{folderRows()}</tbody>
-          <tbody>{fileRows()}</tbody>
-        </table>
-      </div>
-    );
+    var parentFolder = function() {
+      if (store.getState().data) {
+        if (store.getState().data.parent_uri) {
+          return (
+            <tbody>
+              <ParentTableRow />
+            </tbody>
+          );
+        }
+      }
+    };
+
+    if (store.getState().isLoading) {
+      return <Spinner />
+    } else {
+      return (
+        <div className="Files">
+          <table className="Files__List table table-striped table-bordered table-hover">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Kind</th>
+                <th>Size (Kb)</th>
+                <th></th>
+              </tr>
+            </thead>
+            {parentFolder()}
+            <tbody>{folderRows()}</tbody>
+            <tbody>{fileRows()}</tbody>
+          </table>
+        </div>
+      );
+    }
   }
 });
 

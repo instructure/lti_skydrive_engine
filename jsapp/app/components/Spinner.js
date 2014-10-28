@@ -1,18 +1,7 @@
 /** @jsx React.DOM */
 
-var React = require('react');
-
-var store = require('../lib/OneDriveStore');
-
-Function.prototype.extractComment = function() {
-  var startComment = '/*!',
-      endComment = '*/',
-      str = this.toString(),
-      start = str.indexOf(startComment),
-      end = str.lastIndexOf(endComment);
-
-  return str.slice(start + startComment.length, -(str.length - end));
-};
+var React = require('react')
+  , store = require('../lib/OneDriveStore');
 
 var Spinner = module.exports = React.createClass({
   getInitialState: function() {
@@ -33,7 +22,7 @@ var Spinner = module.exports = React.createClass({
 
   render: function() {
     var svg = function() { /*!
-     <svg width="120px" height="120px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" className="uil-ring">
+     <svg width="120px" height="120px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" class="uil-ring">
        <rect x="0" y="0" width="100" height="100" fill="none" className="bk"></rect>
        <defs>
          <filter id="uil-ring-shadow" x="-100%" y="-100%" width="300%" height="300%">

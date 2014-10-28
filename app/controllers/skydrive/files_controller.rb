@@ -31,9 +31,10 @@ module Skydrive
 
       # Update the files with the correct homework submission url
       folder.files.each do |file|
-        file.update_content_type_data( current_api_key.accepted_extensions )
+        file.update_content_type_data( tp.accepted_file_extensions )
         file_download_url = download_url(token: current_api_key.access_token, file: file.server_relative_url)
-        file.homework_submission_url =  tp.file_content_return_url(file_download_url, file.name)
+        file.homework_submission_url = tp.file_content_return_url(file_download_url, file.name)
+        file.is_embeddable = false unless tp.content_return_url.present?
       end
 
       render json: folder
@@ -44,6 +45,7 @@ module Skydrive
       if api_key
         user = api_key.user
         uri = "#{user.token.personal_url}_api/Web/GetFileByServerRelativeUrl('#{params[:file].gsub(/ /, '%20')}')/$value"
+        puts "URI: #{uri}"
         send_data open(uri, { "Authorization" => "Bearer #{user.token.access_token}"}, &:read)
       else
         render status: 401

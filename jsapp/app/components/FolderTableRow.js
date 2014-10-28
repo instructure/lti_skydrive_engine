@@ -1,15 +1,13 @@
 /** @jsx React.DOM */
 
 var React = require('react')
-  , Navigation = require('react-router').Navigation
+  , store = require('../lib/OneDriveStore')
   , folderIcon = require('../lib/icons').folderIcon;
 
 var FolderTableRow = module.exports = React.createClass({
-  mixins: [Navigation],
-
   goToFolder: function(e) {
     e.preventDefault();
-    this.transitionTo('files', { guid: this.props.folder.uri });
+    store.changeUri(this.props.folder.uri);
   },
 
   render: function() {

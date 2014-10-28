@@ -65,16 +65,9 @@ describe('OneDriveStore', function () {
   describe('#authenticate', function() {
     it('must call fetchUser', function(done) {
       var _fetchUser = store.fetchUser;
-      var _setAccessToken = store.setAccessToken;
-
-      store.setAccessToken = function(code) {
-        assert(code === 'ACCESS_TOKEN', 'setCookieToken was called!');
-      };
-
       store.fetchUser = function() {
         assert(true, 'fetchUser was called!');
         store.fetchUser = _fetchUser;
-        store.setAccessToken = _setAccessToken;
         done();
       };
 
@@ -93,29 +86,32 @@ describe('OneDriveStore', function () {
     });
 
     it('must fetch the user', function(done) {
-      store.setState({accessToken: 'ACCESS_TOKEN'});
+      store.setState({ accessToken: 'ACCESS_TOKEN' });
 
       var _setUser = store.setUser;
+      var _reset = store.reset;
+
       store.setUser = function(response) {
         store.setUser = _setUser;
+        store.reset = _reset;
         assert(response.data.username === 'cavneb', 'user was set');
         done();
       };
 
-      var _reset = store.reset;
       store.reset = function(response) {
+        store.setUser = _setUser;
+        store.reset = _reset;
         assert(false, 'reset was called!');
         done();
       };
 
-      server.respondWith([
+      store.fetchUser();
+
+      server.requests[0].respond(
         200,
         { 'Content-Type': 'application/json' },
         '{"id":1,"name":"Eric Berry","username":"cavneb","email":"cavneb@gmail.com"}'
-      ]);
-
-      store.fetchUser();
-      server.respond();
+      );
     });
   });
 });

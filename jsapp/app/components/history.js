@@ -20,14 +20,29 @@ var History = module.exports = React.createClass({
     store.removeChangeListener(this.onChange);
   },
 
+  goToParent: function(e) {
+    e.preventDefault();
+    store.changeUri(store.getState().data.parent_uri.uri);
+  },
+
   render: function() {
-    if (this.state.filesGuid) {
+    var parentLink = function() {
+      if (store.getState().data && store.getState().data.parent_uri) {
+        return (
+          <li>
+            <a onClick={this.goToParent} href="#">&hellip;</a>
+          </li>
+        );
+      }
+    }.bind(this);
+
+    if (store.getState().uri && store.getState().data) {
       return (
         <div className="History">
           <ol className="breadcrumb">
-            <li><a href="#">Documents</a></li>
-            <li><a href="#">Library</a></li>
-            <li className="active">Data</li>
+            <li className="pull-right">{store.getState().currentDisplayName}</li>
+            {parentLink()}
+            <li className="active">{store.getState().data.name}</li>
           </ol>
         </div>
       );
@@ -40,7 +55,6 @@ var History = module.exports = React.createClass({
         </div>
       );
     }
-
   }
 });
 

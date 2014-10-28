@@ -4,21 +4,23 @@ var _ = require('lodash')
   , Q = require('q');
 
 var OneDriveStore = createStore({
+  isLoading: false,
   accessToken: null,
   user: null,
   isAuthenticating: false,
   defaultDisplayName: 'None',
   rootUrl: null,
-  launchParams: null,
+  mountPath: null,
+  previousUri: null,
   uri: null,
   authRedirectUrl: null,
   status: ''
 });
 
-OneDriveStore.setup = function(rootUrl, launchParams) {
+OneDriveStore.setup = function(rootUrl, mountPath) {
   this.setState({
     rootUrl: rootUrl,
-    launchParams: launchParams
+    mountPath: mountPath
   });
 };
 
@@ -70,23 +72,39 @@ OneDriveStore.authenticate = function(token) {
   this.fetchUser();
 };
 
-// Log out the user
-OneDriveStore.reset = function(response) {
-  debugger;
-  this.setState({
-    accessToken: null,
-    user: null
+/**
+ * Public: Perform authorization against Rails to determine if the user
+ *         is able to access their files
+ *
+ * Returns Promise
+ */
+OneDriveStore.authorizeOneDrive = function() {
+  this.setState({ status: 'Authorizing...'});
+  return axios({
+    url: this.getState().rootUrl + 'api/v1/skydrive_authorized',
+    headers: this.authHeaders()
   });
 };
 
-OneDriveStore.setUser = function(response) {
+/**
+ * Public: Set the new uri and trigger the files to be fetched.
+ *
+ * Returns nothing
+ */
+OneDriveStore.changeUri = function(newUri) {
+  var currentUri = this.getState().uri;
   this.setState({
-    status: 'Loaded user data',
-    user: response.data
+    uri: newUri,
+    previousUri: currentUri
   });
-  return this.getState().user;
+  this.fetchFiles();
 };
 
+/**
+ * Private: Get user information from Rails
+ *
+ * Returns Object user
+ */
 OneDriveStore.fetchUser = function() {
   this.setState({ status: 'Fetching user data...'});
   axios({
@@ -96,38 +114,65 @@ OneDriveStore.fetchUser = function() {
     .catch(this.reset.bind(this));
 };
 
-OneDriveStore.authorizeOneDrive = function() {
-  this.setState({ status: 'Authorizing...'});
-  var deferred = Q.defer();
+/**
+ * Private: Resets the access token and user
+ *
+ * Returns nothing
+ */
+OneDriveStore.reset = function(response) {
+  this.setState({
+    accessToken: null,
+    user: null
+  });
+};
 
+/**
+ * Private: Sets the user into the state
+ *
+ * Returns Object user
+ */
+OneDriveStore.setUser = function(response) {
+  this.setState({
+    status: 'Loaded user data',
+    user: response.data
+  });
+  return this.getState().user;
+};
+
+/**
+ * Private: Fetch files and folders from Rails
+ *
+ * Returns nothing
+ */
+OneDriveStore.fetchFiles = function() {
+  if (this.getState().data && (this.getState().uri === this.getState().previousUri)) { return; }
+  this.setState({ isLoading: true, status: 'Fetching files and folders' });
   axios({
-    url: this.getState().rootUrl + 'api/v1/skydrive_authorized',
+    url: this.getState().rootUrl + 'api/v1/files/' + (this.getState().uri || 'root'),
     headers: this.authHeaders()
-  }).then(
-    axios({
-      url: this.getState().rootUrl + 'api/v1/files/' + (this.getState().uri || 'root'),
-      headers: this.authHeaders()
-    }).then(function(response) {
-      this.setState({
-        data: response.data,
-        isLoading: false,
-        authRedirectUrl: null,
-        status: 'Authorized!'
-      });
-      deferred.resolve(response.data);
-    }.bind(this)).catch(function(response) {
+  }).then(function(response) {
+    this.setState({
+      data: response.data,
+      isLoading: false,
+      authRedirectUrl: null,
+      status: 'Authorized!'
+    });
+  }.bind(this))
+    .catch(function(response) {
       this.setState({
         isLoading: false,
         authRedirectUrl: response.data,
         status: 'Unable to authorize'
       });
-      deferred.reject(response.data);
-    }.bind(this))
+    }.bind(this)
   );
-
-  return deferred.promise;
 };
 
+/**
+ * Private: Helper method which generates the auth headers
+ *
+ * Returns Object headers
+ */
 OneDriveStore.authHeaders = function() {
   return { 'Authorization': 'Bearer ' + (this.getState().accessToken || 'none') };
 };
