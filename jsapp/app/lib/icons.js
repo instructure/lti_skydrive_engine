@@ -5,7 +5,6 @@ var jpgIcon        = require('../images/icon-jpg.png');
 var pdfIcon        = require('../images/icon-pdf.png');
 var pngIcon        = require('../images/icon-png.png');
 var wordIcon       = require('../images/icon-word.png');
-var downloadIcon   = require('../images/download.svg');
 
 var iconMap = {
   'folder': folderIcon,
@@ -24,6 +23,5 @@ module.exports = {
   pngIcon: pngIcon,
   wordIcon: wordIcon,
   iconMap: iconMap,
-  folderBackIcon: folderBackIcon,
-  downloadIcon: downloadIcon
+  folderBackIcon: folderBackIcon
 };

@@ -3,15 +3,18 @@
 # Example of how to build with browserify
 # You will need to `npm install uglify-js --save-dev` first
 
-echo "-> Building production version"
+# echo "-> Building production version"
 # NODE_ENV=production webpack
-
+# 
 # echo "-> Uglify"
 # uglifyjs public/bundle.js -cm -v false -o public/jsapp.min.js
-
+# 
 # echo "-> Gzip"
 # gzip -k -f -9 public/jsapp.min.js
-
-echo "-> Copy the files to the Rails app"
+# 
+# echo "-> Copy the files to the Rails app"
 # mv public/jsapp.min.js* ../app/assets/javascripts/skydrive/.
-mv public/bundle.js* ../app/assets/javascripts/skydrive/.
+
+
+
+cp public/bundle.js* ../app/assets/javascripts/skydrive/.
