@@ -27,5 +27,6 @@ group :test do
 end
 
 group :development, :test do
-  gem 'jazz_hands'
+  gem 'rack-cors'
+  gem 'pry'
 end

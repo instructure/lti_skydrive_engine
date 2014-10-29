@@ -1,0 +1,40 @@
+.Files {
+  padding: 20px;
+
+  .Files__List {
+    width: 100%;
+
+    .icon {
+      margin-right: 6px;
+    }
+
+    .filename {
+      line-height: 30px;
+    }
+
+    .button {
+      position: relative;
+      top: 5px;
+    }
+
+    a {
+      text-decoration: underline;
+    }
+
+    tr.disabled td {
+      color: #ccc;
+    }
+
+    tr.disabled td a {
+      color: #ccc;
+    }
+
+    tr.disabled td .button {
+      display: none;
+    }
+
+    &> tbody + tbody {
+      border-top: none;
+    }
+  }
+}

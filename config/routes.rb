@@ -13,8 +13,7 @@ Skydrive::Engine.routes.draw do
   post 'session' => 'session#create'
 
   #LTI launch paths
-  get 'launch' => 'launch#basic_launch', :as => :launch
-  post 'launch' => 'launch#basic_launch'
+  match 'launch' => 'launch#basic_launch', :as => :launch, :via => [:get, :post]
   get 'backdoor' => 'launch#backdoor_launch'
   get 'microsoft_oauth' => 'launch#microsoft_oauth'
   post 'microsoft_oauth' => 'launch#app_redirect'
@@ -22,4 +21,7 @@ Skydrive::Engine.routes.draw do
   get 'config' => 'launch#xml_config'
 
   post 'oauth2/token' => 'api_keys#oauth2_token'
+
+  # forward all other requests to react application
+  get '*path', to: 'ember#index'
 end

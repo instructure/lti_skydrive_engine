@@ -1,6 +1,7 @@
 require File.expand_path('../boot', __FILE__)
 
 require 'rails/all'
+require 'rack/cors' unless Rails.env.production?
 
 Bundler.require(*Rails.groups)
 require "skydrive"
@@ -20,6 +21,15 @@ module Dummy
     # config.i18n.default_locale = :de
     
     config.action_dispatch.default_headers = { 'X-Frame-Options' => 'ALLOWALL' }
+
+    unless Rails.env.production?
+      config.middleware.insert_before "Rack::Sendfile", "Rack::Cors" do
+        allow do
+          origins '*'
+          resource '*', :headers => :any, :methods => [:get, :post, :options]
+        end
+      end
+    end
   end
 end
 

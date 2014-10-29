@@ -1,18 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Sky Drive</title>
-	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
-  <%= stylesheet_link_tag    "skydrive/font-awesome/font-awesome.min.css", media: "all" %>
-  <%= stylesheet_link_tag    "skydrive/application.css", media: "all" %>
-  <%= javascript_include_tag "skydrive/application.js" %>
-  <%= csrf_meta_tags %>
-  <title>Sky Drive</title>
+  <title>OneDrive</title>
+  <script type="text/javascript">
+  window.ROOT_URL = '<%= root_url %>';
+  window.MOUNT_PATH = '/skydrive/';
+  </script>
 </head>
 <body>
-
 <%= yield %>
-
+<% if Rails.env.production? %>
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', '<%= ENV['GA_CODE'] %>', '<%= ENV['GA_DOMAIN'] %>');
+    ga('send', 'pageview');
+  </script>
+<% end %>
 </body>
 </html>
 

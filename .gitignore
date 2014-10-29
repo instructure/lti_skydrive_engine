@@ -1,5 +1,6 @@
 .bundle/
 log/*.log
+jsapp/*.log
 pkg/
 test/dummy/db/*.sqlite3
 test/dummy/db/*.sqlite3-journal
@@ -11,3 +12,4 @@ foundation/.sass-cache
 
 #ignore configuration files
 *.yml
+NOTES.txt

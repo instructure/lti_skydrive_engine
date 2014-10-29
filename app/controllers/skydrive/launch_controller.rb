@@ -72,7 +72,7 @@ module Skydrive
       user.cleanup_api_keys
       
       code = user.session_api_key(params).oauth_code
-      redirect_to "#{root_path}#/launch/#{code}"
+      redirect_to "#{root_path}launch/#{code}"
     end
 
     def skydrive_authorized
@@ -85,6 +85,7 @@ module Skydrive
         render json: {}, status: 201
       else
         code = current_user.api_keys.active.skydrive_oauth.create.oauth_code
+
         if current_user.account.admin
           #Get the user's access token
           auth_url = skydrive_client.app_redirect_uri(microsoft_oauth_url, state: code)
@@ -105,7 +106,7 @@ module Skydrive
       token.refresh_token = params[:SPAppToken]
       token.refresh!(skydrive_client)
 
-      redirect_to "#{root_path}#/oauth/callback"
+      redirect_to "#{root_path}oauth/callback"
     end
 
     def microsoft_oauth
@@ -119,7 +120,7 @@ module Skydrive
         @current_user.account.update_attributes(admin: @current_user)
       end
 
-      redirect_to "#{root_path}#/oauth/callback"
+      redirect_to "#{root_path}oauth/callback"
     end
 
     def xml_config
