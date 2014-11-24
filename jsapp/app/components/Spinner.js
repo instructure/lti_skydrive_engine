@@ -9,7 +9,9 @@ var Spinner = module.exports = React.createClass({
   },
 
   onChange: function() {
-    this.setState(store.getState());
+    if (this.isMounted()) {
+      this.setState(store.getState());
+    }
   },
 
   componentDidMount: function() {

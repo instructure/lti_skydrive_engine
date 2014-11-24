@@ -70,7 +70,7 @@ module Skydrive
         user.token = Token.create(client_domain: "#{client_domain}-my.sharepoint.com")
       end
       user.cleanup_api_keys
-      
+
       code = user.session_api_key(params).oauth_code
       redirect_to "#{root_path}launch/#{code}"
     end

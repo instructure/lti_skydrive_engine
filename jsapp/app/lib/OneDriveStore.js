@@ -1,4 +1,5 @@
-var _ = require('lodash')
+var $ = require('jquery')
+  , _ = require('lodash')
   , axios = require('axios')
   , createStore = require('./createStore')
   , Q = require('q');
@@ -14,7 +15,8 @@ var OneDriveStore = createStore({
   previousUri: null,
   uri: null,
   authRedirectUrl: null,
-  status: ''
+  status: '',
+  statusCode: 0
 });
 
 OneDriveStore.setup = function(rootUrl, mountPath) {
@@ -147,25 +149,30 @@ OneDriveStore.setUser = function(response) {
 OneDriveStore.fetchFiles = function() {
   if (this.getState().data && (this.getState().uri === this.getState().previousUri)) { return; }
   this.setState({ isLoading: true, status: 'Fetching files and folders' });
-  axios({
+
+  var request = $.ajax({
     url: this.getState().rootUrl + 'api/v1/files/' + (this.getState().uri || 'root'),
+    type: 'GET',
     headers: this.authHeaders()
-  }).then(function(response) {
+  });
+
+  request.done(function(data) {
     this.setState({
-      data: response.data,
+      data: data,
       isLoading: false,
       authRedirectUrl: null,
+      statusCode: 1,
       status: 'Authorized!'
     });
-  }.bind(this))
-    .catch(function(response) {
-      this.setState({
-        isLoading: false,
-        authRedirectUrl: response.data,
-        status: 'Unable to authorize'
-      });
-    }.bind(this)
-  );
+  }.bind(this));
+
+  request.fail(function() {
+    this.setState({
+      isLoading: false,
+      statusCode: -1,
+      status: 'Unable to authorize'
+    });
+  }.bind(this));
 };
 
 /**

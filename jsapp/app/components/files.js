@@ -21,23 +21,23 @@ var Files = module.exports = React.createClass({
   },
 
   getInitialState: function() {
-    console.log("getInitialState");
     return store.getState();
   },
 
   onChange: function() {
-    console.log("onChange");
-    this.setState(store.getState());
+    if (store.getState().statusCode === -1) {
+      this.transitionTo('microsoft-auth-failed');
+    } else {
+      this.setState(store.getState());
+    }
   },
 
   componentDidMount: function() {
-    console.log("componentDidMount");
     store.addChangeListener(this.onChange);
     store.changeUri(this.props.params.splat || 'root');
   },
 
   componentWillUnmount: function() {
-    console.log("componentWillUnmount");
     store.removeChangeListener(this.onChange);
   },
 

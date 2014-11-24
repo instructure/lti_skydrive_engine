@@ -6,7 +6,10 @@ module Skydrive
     before_filter :ensure_valid_skydrive_token, except: :download
 
     def ensure_valid_skydrive_token
-      head :unauthorized unless current_user.valid_skydrive_token?
+      unless current_user.valid_skydrive_token?
+        head :unauthorized
+        return
+      end
 
       if current_user.token && current_user.token.not_before > Time.now
         current_user.token.refresh!(skydrive_client)
