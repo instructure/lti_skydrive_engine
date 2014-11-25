@@ -56,7 +56,7 @@ module Skydrive
         return
       end
 
-      user = @account.users.where(lti_user_id: tp.user_id).first ||
+      user = @account.users.where(username: tp.user_id).first ||
           @account.users.create(
               lti_user_id: tp.user_id,
               name: tp.lis_person_name_full,
