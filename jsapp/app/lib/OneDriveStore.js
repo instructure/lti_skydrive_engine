@@ -151,7 +151,7 @@ OneDriveStore.fetchFiles = function() {
   this.setState({ isLoading: true, status: 'Fetching files and folders' });
 
   var request = $.ajax({
-    url: this.getState().rootUrl + 'api/v1/files/' + (this.getState().uri || 'root'),
+    url: this.getState().rootUrl + 'api/v1/files/?uri=' + (this.getState().uri || 'root'),
     type: 'GET',
     headers: this.authHeaders()
   });
