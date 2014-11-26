@@ -93,19 +93,11 @@ Getting Started
    via GET parameter. (ie `http://localhost:3000/config?sharepoint_client_domain=<mysubdomain>`)
 
 
-Production Notes
+React Build Notes
 ----------
-* The ember application can be packaged for production (or development) use with
-  a rake task
+* The react application can be packaged for production using a script. This will build a
+  file called `bundle.js` and copy it to the asset pipeline.
+
   ```
-  bundle exec rake build:ember
-  ```
-  This task uses the RAILS_ENV parameter, so when it is called in a development
-  environment it will build the application with development friendly versions
-  of ember and when run in production it will use the production version of ember
-  and minify the application.  If you want to prebuild the application before
-  deploying, or you want to test your production build simply pass in the correct
-  environment:
-  ```
-  bundle exec rake build:ember RAILS_ENV=production
+  sh jsapp/script/build
   ```
