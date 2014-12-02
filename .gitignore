@@ -13,3 +13,5 @@ foundation/.sass-cache
 #ignore configuration files
 *.yml
 NOTES.txt
+.idea
+jsapp/.idea
