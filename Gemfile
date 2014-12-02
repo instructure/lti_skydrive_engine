@@ -16,7 +16,6 @@ gem 'thin'
 
 group :development do
   gem 'uglifier'
-  gem 'guard-rspec'
 end
 
 group :test do
