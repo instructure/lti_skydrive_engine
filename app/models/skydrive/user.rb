@@ -6,7 +6,7 @@ module Skydrive
     has_one :token
     belongs_to :account
 
-    validates :username, presence: true, uniqueness: true
+    validates :username, presence: true
     validates :name, presence: true
 
     def session_api_key(params={})
