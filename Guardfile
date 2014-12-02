@@ -1,7 +1,3 @@
-guard :embertools, debug: true, out_file: 'app/assets/javascripts/skydrive/ember_app.js' do
-  watch(%r{^ember-app\/javascripts\/(?!index\.js)(?!templates\.js)(?!application\.js).*})
-end
-
 guard :rspec do
   watch(%r{^spec/.+_spec\.rb$})
   watch(%r{^lib/(.+)\.rb$})     { |m| "spec/lib/#{m[1]}_spec.rb" }

@@ -15,9 +15,7 @@ gemspec
 gem 'thin'
 
 group :development do
-  gem 'guard-embertools'
   gem 'uglifier'
-  gem 'ember-source'
   gem 'guard-rspec'
 end
 
