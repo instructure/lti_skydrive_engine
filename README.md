@@ -1,6 +1,8 @@
 SkydrivePro LTI Tool
 ======
 
+[![Gem Version](https://badge.fury.io/rb/lti_skydrive.svg)](http://badge.fury.io/rb/lti_skydrive)
+
 The SkydrivePro LTI tool provides a method for using LTI to access and return
 SkydrivePro files to a ToolConsumer.  This app uses the unofficial LTI content
 extension to return file information to the tool consumer.  For more information
