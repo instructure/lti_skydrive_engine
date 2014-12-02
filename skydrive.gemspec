@@ -8,8 +8,8 @@ Gem::Specification.new do |s|
   s.name        = "lti_skydrive"
   s.version     = Skydrive::VERSION
   s.licenses    = ['MIT']
-  s.authors     = ["Brad Humphrey"]
-  s.email       = ["brad@instructure.com"]
+  s.authors     = ["Brad Humphrey", "Eric Berry"]
+  s.email       = ["brad@instructure.com", "cavneb@gmail.com"]
   s.homepage    = "https://www.edu-apps.org/"
   s.summary     = "Microsoft SkydrivePro integration"
   s.description = "Microsoft SkydrivePro integration"
