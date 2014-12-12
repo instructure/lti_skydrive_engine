@@ -9,7 +9,7 @@ module Skydrive
   class Client
     include ActionView::Helpers::NumberHelper
 
-    attr_accessor :client_id, :client_secret, :guid, :client_domain, :token
+    attr_accessor :client_id, :client_secret, :guid, :personal_url, :token, :refresh_token
 
     def initialize(options = {})
       options.each { |key, val| self.send("#{key}=", val) if self.respond_to?("#{key}=") }
@@ -17,99 +17,63 @@ module Skydrive
 
     # URL used to authorize this app for a sharepoint tenant
     def oauth_authorize_redirect_uri(redirect_uri, options = {})
-      scope = options[:scope] || 'Web.Read AllSites.Write AllProfiles.Read'
       state = options[:state]
       redirect_params = {
           client_id: client_id,
-          scope: scope,
           redirect_uri: redirect_uri,
-          response_type: 'code'
+          response_type: 'code',
+          resource: 'https://api.office.com/discovery/'
       }
-      "https://#{client_domain}/_layouts/15/OAuthAuthorize.aspx?" +
+      "https://login.windows.net/common/oauth2/authorize?" +
           redirect_params.map{|k,v| "#{k}=#{CGI::escape(v)}"}.join('&') +
           (state ? "&state=#{state}" : "")
     end
 
-    # Service call for trading the OAuth 2 code for a token
-    # This is used to authorize the app for a sharepoint tenant
-    def authorize_app(redirect_uri, code)
-      realm = self.get_realm
-      endpoint = "https://accounts.accesscontrol.windows.net/#{realm}/tokens/OAuth/2"
-
+    def request_oauth_token(code, redirect_url)
+      endpoint = 'https://login.windows.net/common/oauth2/token'
       options = {
-          content_type: 'application/x-www-form-urlencoded',
-          client_id: "#{client_id}@#{realm}",
-          redirect_uri: redirect_uri,
+          client_id: client_id,
           client_secret: client_secret,
           code: code,
+          redirect_uri: redirect_url,
+          resource: 'https://api.office.com/discovery/',
           grant_type: 'authorization_code',
-          resource: "#{guid}/#{client_domain}@#{realm}",
       }
 
       RestClient.post endpoint, options do |response, request, result|
         log_restclient_response(response, request, result)
         results = format_results(JSON.parse(response))
         self.token = results['access_token']
+        self.refresh_token = results['refresh_token']
         results
       end
     end
 
-    # Service call for refreshing an admin oauth2 token
-    def refresh_token(refresh_token)
-      realm = self.get_realm
-      endpoint = "https://accounts.accesscontrol.windows.net/#{realm}/tokens/OAuth/2"
+    def get_my_files_service
+      services = api_call('https://api.office.com/discovery/v1.0/me/services', {'Accept' => nil})
+      services["value"].find{|v| v["capability"] = "MyFiles"}
+    end
 
+    def get_personal_url(service_endpoint_uri)
+      self.personal_url = api_call("#{service_endpoint_uri}/files/root/weburl", {'Accept' => nil})['value']
+    end
+
+    def refresh_token(params)
+      endpoint = 'https://login.windows.net/common/oauth2/token'
       options = {
-          content_type: 'application/x-www-form-urlencoded',
-          client_id: "#{client_id}@#{realm}",
+          client_id: client_id,
           client_secret: client_secret,
-          refresh_token: refresh_token,
           grant_type: 'refresh_token',
-          resource: "#{guid}/#{client_domain}@#{realm}",
-      }
+          refresh_token: @refresh_token
+      }.merge(params)
 
       RestClient.post endpoint, options do |response, request, result|
         log_restclient_response(response, request, result)
         results = format_results(JSON.parse(response))
         self.token = results['access_token']
+        self.refresh_token = results['refresh_token']
         results
       end
-    end
-
-    # URL used to obtain an access token for a regular user
-    def app_redirect_uri(redirect_uri, options = {})
-      redirect_params = {
-        client_id: client_id,
-        redirect_uri: redirect_uri + "?state=#{options[:state]}",
-      }
-
-      "https://#{client_domain}/_layouts/15/appredirect.aspx?" +
-        redirect_params.map{|k,v| "#{k}=#{CGI::escape(v)}"}.join('&')
-    end
-
-    # Service call for trading generating a token for a regular user
-    def get_token(spAppToken)
-      decoded = JWT.decode(spAppToken, SHAREPOINT[:client_secret], false).first
-      acsServer = JSON.parse(decoded['appctx'])['SecurityTokenServiceUri']
-
-      part1 = '00000003-0000-0ff1-ce00-000000000000'
-      part2 =  client_domain
-      part3 = decoded['appctxsender'].split('@')[1]
-
-      postdata = {'grant_type' => 'refresh_token',
-                  'client_id' => decoded['aud'],
-                  'client_secret' => SHAREPOINT[:client_secret],
-                  'refresh_token' => decoded['refreshtoken'],
-                  'resource' => part1 + '/' + part2 + '@' + part3}
-
-      result = RestClient.post acsServer, postdata do |response, request, result|
-        log_restclient_response(response, request, result)
-        result = JSON.parse(response)
-        self.token = result['access_token']
-        result
-      end
-
-      return result
     end
 
     def format_results(results)
@@ -121,7 +85,7 @@ module Skydrive
 
     def get_realm
       #401 sharepoint challenge to get the realm
-      resource = RestClient::Resource.new "https://#{client_domain}/_vti_bin/client.svc/",
+      resource = RestClient::Resource.new "#{personal_url}/_vti_bin/client.svc/",
                                           {headers: {'Authorization' => 'Bearer'}}
       www_authenticate = {}
       resource.get do |response, request, result|
@@ -187,15 +151,17 @@ module Skydrive
       return folder
     end
 
-    def api_call(url)
+    def api_call(url, headers = {})
       url.gsub!("https:/i", "https://i")
       uri = URI.escape(url)
 
       pid = generate_pid
 
+      headers['Authorization'] = "Bearer #{token}" unless headers.has_key? 'Authorization'
+      headers['Accept'] = "application/json; odata=verbose" unless headers.has_key? 'Accept'
+
       c = Curl::Easy.new(uri) do |http|
-        http.headers['Authorization'] = "Bearer #{token}"
-        http.headers['Accept'] = "application/json; odata=verbose"
+        headers.each {|k,v| http.headers[k] = v if v }
       end
 
       headers = []
@@ -211,16 +177,17 @@ module Skydrive
       c.perform
 
       Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST: #{uri.to_s}")
-      headerOutput = c.headers.values.join("\n  - ")
+      headerOutput = c.headers.map {|k,v| "#{k}: #{v}"}.join("\n - ")
       Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST HEADERS:\n  - #{headerOutput}")
       Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE HEADERS:\n  - #{headers.join('  - ')}")
       Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE BODY:\n#{buffer}");
 
-      JSON.parse(buffer)["d"]
+      result = JSON.parse(buffer)
+      result["d"] || result
     end
 
     def get_user
-      api_call("https://#{client_domain}/_api/SP.UserProfiles.PeopleManager/GetMyProperties")
+      api_call("#{personal_url}/_api/SP.UserProfiles.PeopleManager/GetMyProperties")
     end
 
     private

@@ -40,7 +40,7 @@ module Skydrive
     def skydrive_client
       @skydrive_client ||=
           Client.new(SHAREPOINT.merge(
-                         client_domain: current_user.token.client_domain,
+                         personal_url: current_user.token.personal_url,
                          token: current_user.token.access_token
                      ))
     end

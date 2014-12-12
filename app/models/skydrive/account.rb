@@ -3,7 +3,6 @@ module Skydrive
     validates :key, presence: true, uniqueness: true
     validates :secret, presence: true
 
-    belongs_to :admin, class_name: "User"
     has_many :users
 
     def self.new_key

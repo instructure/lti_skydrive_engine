@@ -1,8 +1,5 @@
 module Skydrive
   class Token < ActiveRecord::Base
-    USER = 'user'
-    ADMIN = 'admin'
-
     validates :user_id, uniqueness: true
     belongs_to :user
 
@@ -16,20 +13,12 @@ module Skydrive
 
     def refresh!(client)
       results = {}
-      case token_type
-        when USER
-          results = client.get_token(refresh_token)
-          self.personal_url ||= client.get_user['PersonalUrl']
-        when ADMIN
-          results = client.refresh_token(refresh_token)
-      end
+
+      results = client.refresh_token(resource: resource)
 
       if results.key? 'access_token'
-        self.access_token = results['access_token']
-        self.not_before = Time.at(results['not_before'].to_i)
-        self.expires_on = Time.at(results['expires_on'].to_i)
-        self.expires_in = results['expires_in']
-        save
+        attrs = ['token_type', 'expires_in', 'expires_on', 'not_before', 'resource', 'access_token', 'refresh_token']
+        update_attributes(results.reject{|a| !attrs.include?(a)})
       end
     end
   end
