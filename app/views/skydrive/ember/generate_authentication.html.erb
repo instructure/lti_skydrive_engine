@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Request OneDrive App Key and Secret</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container" style="margin: 25px;">
+  <h4 class="text-center" style="margin-bottom: 30px;">Generated Key and Secret</h4>
+
+  <div style="text-align: center; font-weight: bold;">Your Key for OneDrive is</div>
+  <div style="margin-bottom: 15px; background: #ffe166; padding: 10px; text-align: center; border: 1px dashed rgba(0,0,0,0.1); font-family: monospace;"><%= @account.key %></div>
+
+  <div style="text-align: center; font-weight: bold;">Your Secret for OneDrive is</div>
+  <div style="margin-bottom: 15px; background: #ffe166; padding: 10px; text-align: center; border: 1px dashed rgba(0,0,0,0.1); font-family: monospace;"><%= @account.secret %></div>
+
+  <p class="text-muted text-center">Make sure write the above down.</p>
+</div>
+
+</body>
+</html>
+

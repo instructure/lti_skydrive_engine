@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Request OneDrive App Key and Secret</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+</head>
+<body>
+
+<%= form_for @account, url: generate_authentication_path, html: { role: 'form' } do |f| %>
+  <div class="container" style="margin: 25px;">
+    <div class="row">
+      <div class="col-xs-12">
+        <p class="text-muted text-center" style="margin-bottom: 25px;">Please fill out the form to generate your Key and Secret. All fields are required.</p>
+
+        <div class="form-group">
+          <%= f.label :name %>
+          <%= f.text_field :name, class: "form-control", placeholder: "Name", required: true %>
+        </div>
+        <div class="form-group">
+          <%= f.label :email %>
+          <%= f.email_field :email, class: "form-control", placeholder: "Email address", required: true %>
+        </div>
+        <div class="form-group">
+          <%= f.label :institution %>
+          <%= f.text_field :institution, class: "form-control", placeholder: "Organization/Institution", required: true %>
+        </div>
+        <div class="form-group">
+          <%= f.label :title %>
+          <%= f.text_field :title, class: "form-control", placeholder: "Title", required: true %>
+        </div>
+        <button type="submit" class="btn btn-primary">Generate Key and Secret</button>
+      </div>
+    
+    </div>
+  </div>
+<% end %>
+
+</body>
+</html>
+

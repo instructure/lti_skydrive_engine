@@ -11,13 +11,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140910214356) do
+ActiveRecord::Schema.define(version: 20141218213907) do
 
   create_table "skydrive_accounts", force: true do |t|
-    t.string  "key"
-    t.string  "secret"
-    t.text    "tool_consumer_instance_guid"
-    t.integer "admin_id"
+    t.string "key"
+    t.string "secret"
+    t.text   "tool_consumer_instance_guid"
+    t.string "name"
+    t.string "email"
+    t.string "institution"
+    t.string "title"
   end
 
   add_index "skydrive_accounts", ["key"], name: "index_skydrive_accounts_on_key"
@@ -45,7 +48,6 @@ ActiveRecord::Schema.define(version: 20140910214356) do
     t.datetime "not_before"
     t.datetime "expires_on"
     t.string   "resource"
-    t.string   "client_domain"
     t.string   "personal_url"
   end
 

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    lti_skydrive (1.0.5)
+    lti_skydrive (1.0.7)
       active_model_serializers (~> 0.8.0)
       curb
       ims-lti
@@ -70,7 +70,7 @@ GEM
     mimemagic (0.2.1)
     minitest (5.5.0)
     multi_json (1.10.1)
-    netrc (0.10.1)
+    netrc (0.10.2)
     oauth (0.4.7)
     pry (0.10.1)
       coderay (~> 1.1.0)
