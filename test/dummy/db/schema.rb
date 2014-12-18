@@ -48,6 +48,7 @@ ActiveRecord::Schema.define(version: 20141218213907) do
     t.datetime "not_before"
     t.datetime "expires_on"
     t.string   "resource"
+    t.string   "client_domain"
     t.string   "personal_url"
   end
 
