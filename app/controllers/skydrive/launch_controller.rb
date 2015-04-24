@@ -39,6 +39,7 @@ module Skydrive
     end
 
     def basic_launch
+
       tp = tool_provider
       if tp.lti_errorlog
         render text: tp.lti_errorlog, status: 400, layout: "skydrive/error"
@@ -107,6 +108,11 @@ module Skydrive
       tc.canvas_account_navigation!
       tc.canvas_course_navigation!(visibility: 'admin')
       render xml: tc.to_xml
+    end
+
+    def skydrive_logout
+      render json: {}, status: 200
+      current_user.token.destroy
     end
   end
 end

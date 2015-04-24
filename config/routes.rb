@@ -16,6 +16,7 @@ Skydrive::Engine.routes.draw do
 
   #LTI launch paths
   match 'launch' => 'launch#basic_launch', :as => :launch, :via => [:get, :post]
+  get 'skydrive_logout' => 'launch#skydrive_logout'
   get 'backdoor' => 'launch#backdoor_launch'
   get 'microsoft_oauth' => 'launch#microsoft_oauth'
   post 'microsoft_oauth' => 'launch#app_redirect'

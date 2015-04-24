@@ -26,6 +26,22 @@ OneDriveStore.setup = function(rootUrl, mountPath) {
   });
 };
 
+OneDriveStore.revertStore = function(rootUrl, mountPath) {
+  this.setState({
+    isLoading: false,
+    accessToken: null,
+    user: null,
+    isAuthenticating: false,
+    defaultDisplayName: 'None',
+    previousUri: null,
+    uri: null,
+    authRedirectUrl: null,
+    status: '',
+    statusCode: 0
+  });
+};
+
+
 // Determine if the user is currently authenticated.
 OneDriveStore.isAuthenticated = function() {
   return !_.isEmpty(this.getState().accessToken);
@@ -114,6 +130,20 @@ OneDriveStore.fetchUser = function() {
     headers: this.authHeaders()
   }).then(this.setUser.bind(this))
     .catch(this.reset.bind(this));
+};
+
+/**
+ * Remove one drive auth from user
+ *
+ * Returns nothing
+ */
+OneDriveStore.skydriveLogout = function() {
+  this.setState({ status: 'Logging out of onedrive...'});
+  axios({
+    url: this.getState().rootUrl + 'skydrive_logout',
+    headers: this.authHeaders()
+  }).then(this.revertStore.bind(this))
+    .catch(this.revertStore.bind(this));
 };
 
 /**
