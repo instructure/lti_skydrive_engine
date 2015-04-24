@@ -44,4 +44,3 @@ var Login = module.exports = React.createClass({
     );
   }
 });
-

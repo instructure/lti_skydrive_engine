@@ -9,6 +9,7 @@ var Router = require('react-router')
   , Launch = require('../components/Launch')
   , Files = require('../components/Files')
   , Login = require('../components/Login')
+  , LoggedOut = require('../components/LoggedOut')
   , AuthFailed = require('../components/AuthFailed')
   , MicrosoftAuthFailed = require('../components/MicrosoftAuthFailed')
   , OauthCallback = require('../components/OauthCallback');
@@ -20,6 +21,7 @@ module.exports = (
       <Route name="launch" path="/skydrive/launch/:code" handler={Launch} />
       <Route name="files" path="/skydrive/files" handler={Files} />
       <Route name="login" path="/skydrive/login" handler={Login} />
+      <Route name="logged_out" path="/skydrive/logged_out" handler={LoggedOut} />
       <Route name="oauth-callback" path="/skydrive/oauth/callback" handler={OauthCallback} />
       <Route name="auth-failed" path="/skydrive/auth-failed" handler={AuthFailed} />
       <Route name="microsoft-auth-failed" path="/skydrive/microsoft-auth-failed" handler={MicrosoftAuthFailed} />
@@ -28,4 +30,3 @@ module.exports = (
     <NotFoundRoute handler={AuthFailed}/>
   </Routes>
 );
-
