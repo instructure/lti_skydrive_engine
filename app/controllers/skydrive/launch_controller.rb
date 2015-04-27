@@ -1,6 +1,13 @@
 require 'ims/lti'
 
 module Skydrive
+
+  ERROR_NO_API_KEY = "Unable to get an access token, your state is invalid"
+  ERROR_JSON_PARSE = "JSON::ParserError"
+  ERROR_SKY_DRIVE_API = "Skydrive::APIErrorException"
+
+
+
   class LaunchController < ApplicationController
     include ActionController::Cookies
     before_filter :ensure_authenticated_user, only: :skydrive_authorized
@@ -78,17 +85,23 @@ module Skydrive
     end
 
     def microsoft_oauth
-      @current_user = ApiKey.trade_oauth_code_for_access_token(params['state']).user
+      begin
+        api_key = ApiKey.trade_oauth_code_for_access_token(params['state'])
+        raise RuntimeError, ERROR_NO_API_KEY unless api_key
 
-      skydrive_client.request_oauth_token(params['code'], microsoft_oauth_url)
-      service = skydrive_client.get_my_files_service()
-      current_user.token.resource = service["serviceResourceId"]
-      current_user.token.refresh!(skydrive_client)
+        @current_user = api_key.user
+        skydrive_client.request_oauth_token(params['code'], microsoft_oauth_url)
+        service = skydrive_client.get_my_files_service()
+        current_user.token.resource = service["serviceResourceId"]
+        current_user.token.refresh!(skydrive_client)
 
-      personal_url = skydrive_client.get_personal_url(service["serviceEndpointUri"]).gsub(/\/Documents$/,'/')
-      current_user.token.update_attribute(:personal_url, personal_url)
+        personal_url = skydrive_client.get_personal_url(service["serviceEndpointUri"]).gsub(/\/Documents$/,'/')
+        current_user.token.update_attribute(:personal_url, personal_url)
 
-      redirect_to "#{root_path}oauth/callback"
+        redirect_to "#{root_path}oauth/callback"
+      rescue Exception => api_error
+        handle_api_error api_error
+      end
     end
 
     def xml_config
@@ -113,6 +126,30 @@ module Skydrive
     def skydrive_logout
       render json: {}, status: 200
       current_user.token.destroy
+    end
+
+    def launch_error
+      @title = %s{Ooops! Something went terribly wrong!}
+      @message = %s{Not sure what happened, or how you got here?!}
+      render status: 400, layout: "skydrive/error"
+    end
+
+    private
+    def handle_api_error(api_error)
+      @api_error = api_error
+      @title = %s{Ooops! Something went terribly wrong!}
+      @message = ""
+
+      if api_error.message == ERROR_SKY_DRIVE_API
+        @message = %s{The OneDrive API returned an error. Close any popups, and relaunch OneDrive.}
+      elsif api_error.message == ERROR_JSON_PARSE
+        @message = %s{The OneDrive API returned an invalid response. Close any popups, and relaunch OneDrive.}
+      elsif api_error.message == ERROR_NO_API_KEY
+        @title = %s{Unable to retrieve an access token}
+        @message = %s{It looks like your using an old page. Close any popups, and relaunch OneDrive.}
+      end
+
+      render action: :launch_error, status: 400, layout: "skydrive/error"
     end
   end
 end

@@ -6,6 +6,9 @@ require 'jwt'
 
 
 module Skydrive
+  class APIErrorException < RuntimeError
+  end
+
   class Client
     include ActionView::Helpers::NumberHelper
 
@@ -123,7 +126,7 @@ module Skydrive
         new_file.content_tag = f['ContentTag']
         folder.files << new_file
       end
-      
+
       sub_folders = api_call(CGI::unescape(data['Folders']['__deferred']['uri']))['results']
       sub_folders.each do |sf|
 
@@ -155,7 +158,6 @@ module Skydrive
       url.gsub!("https:/i", "https://i")
       uri = URI.escape(url)
 
-      pid = generate_pid
 
       headers['Authorization'] = "Bearer #{token}" unless headers.has_key? 'Authorization'
       headers['Accept'] = "application/json; odata=verbose" unless headers.has_key? 'Accept'
@@ -164,25 +166,41 @@ module Skydrive
         headers.each {|k,v| http.headers[k] = v if v }
       end
 
-      headers = []
-      buffer = ""
-      c.on_body { |data| 
-        buffer << data
-        data.size
-      }
-      c.on_header { |data|
-        headers << data
-        data.size
-      }
-      c.perform
+      begin
 
-      Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST: #{uri.to_s}")
-      headerOutput = c.headers.map {|k,v| "#{k}: #{v}"}.join("\n - ")
-      Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST HEADERS:\n  - #{headerOutput}")
-      Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE HEADERS:\n  - #{headers.join('  - ')}")
-      Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE BODY:\n#{buffer}");
+        headers = []
+        buffer = ""
+        c.on_body { |data|
+          buffer << data
+          data.size
+        }
+        c.on_header { |data|
+          headers << data
+          data.size
+        }
+        c.perform
 
-      result = JSON.parse(buffer)
+        result = JSON.parse(buffer)
+        raise APIErrorException, result["error"] if result["error"]
+
+      rescue Exception => error
+        pid = generate_pid
+        headerOutput = c.headers.map {|k,v| "#{k}: #{v}"}.join("\n[#{pid}] - ")
+        backtrace_output = error.backtrace.join("\n[#{pid}] - ")
+        buffer_output = buffer.split("\n").join("\n[#{pid}] - ")
+
+        Skydrive.logger.error("[#{pid}] SKYDRIVE ERROR: #{error.class.to_s} ◊ #{error}")
+        Skydrive.logger.info("[#{pid}] SKYDRIVE BACKTRACE: \n[#{pid}] - #{backtrace_output}")
+        Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST: #{uri.to_s}")
+        Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST HEADERS:\n[#{pid}] - #{headerOutput}")
+        Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE HEADERS:\n[#{pid}] - #{headers.join('  - ')}")
+        Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE BODY:\n[#{pid}] - #{buffer_output}");
+        Skydrive.logger.info("[#{pid}] END --\n");
+
+
+        raise APIErrorException, error.class.to_s
+      end
+
       result["d"] || result
     end
 
