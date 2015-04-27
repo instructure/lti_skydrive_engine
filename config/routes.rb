@@ -24,6 +24,7 @@ Skydrive::Engine.routes.draw do
   get 'config' => 'launch#xml_config'
 
   post 'oauth2/token' => 'api_keys#oauth2_token'
+  match 'error' => 'launch#launch_error', :via => [:get, :post]
 
   # forward all other requests to react application
   get '*path', to: 'ember#index'
