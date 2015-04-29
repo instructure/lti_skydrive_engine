@@ -13,6 +13,7 @@ gemspec
 # To use debugger
 # gem 'debugger'
 gem 'thin'
+gem 'sentry-raven'
 
 group :development do
   gem 'uglifier'

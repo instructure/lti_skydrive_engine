@@ -48,4 +48,3 @@ ActionController::Base.class_eval do
     perform_action_without_rescue
   end
 end
-

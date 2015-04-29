@@ -1,3 +1,4 @@
+require 'raven'
 require 'ims/lti'
 
 module Skydrive
@@ -100,7 +101,7 @@ module Skydrive
 
         redirect_to "#{root_path}oauth/callback"
       rescue Exception => api_error
-        handle_api_error api_error
+        launch_exception_handler api_error
       end
     end
 
@@ -135,7 +136,8 @@ module Skydrive
     end
 
     private
-    def handle_api_error(api_error)
+    def launch_exception_handler(api_error)
+      RavenLogger.capture_exception(api_error)
       @api_error = api_error
       @title = %s{Ooops! Something went terribly wrong!}
       @message = ""

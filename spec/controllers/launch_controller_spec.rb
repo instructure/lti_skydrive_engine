@@ -1,23 +1,27 @@
 require 'spec_helper'
 
 module Skydrive
-  describe LaunchController do
+  describe LaunchController,  :type => :controller do
+
+    account = Account.find_or_create_by!(key: "one", secret: "not_two" )
     let(:email) {'user@email.com'}
     let(:username) {'user'}
     let(:name) {'User'}
-    let(:sharepoint_client_domain) {'test-my.sharepoint.com'}
+    let(:sharepoint_client_domain) {'login.windows.net'}
 
-    let(:user) {User.new(email: 'user@email.com', username: 'user', name: 'User')}
+    let(:account) {account}
+    let(:user) {account.users.find_or_initialize_by(email: 'user@email.com', username: 'user', name: 'User')}
 
     describe '#basic_launch' do
+
       before(:each) do
         tp = IMS::LTI::ToolProvider.new(nil, nil, {})
         tp.lis_person_contact_email_primary = email
         tp.set_custom_param('sharepoint_client_domain', 'test')
         tp.user_id = username
         tp.lis_person_name_full = name
-
         LaunchController.any_instance.stub(tool_provider: tp)
+        controller.instance_variable_set("@account", account)
       end
 
       it "creates a new user" do
@@ -32,7 +36,6 @@ module Skydrive
         user.name.should == name
 
         user.token.should be_a Token
-        user.token.client_domain.should == sharepoint_client_domain
       end
 
       it "returns a valid oauth code" do
