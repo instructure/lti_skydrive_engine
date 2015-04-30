@@ -55,12 +55,16 @@ describe Skydrive::Client do
   end
 
   it "#format_results" do
+    prev_tz = ENV['TZ']
+    ENV['TZ'] = 'UTC'
+
     raw_results = "{\"token_type\":\"Bearer\",\"access_token\":\"ABCDEFGHIJKLMNOPQRSTUVWXYZ\",\"expires_in\":\"43199\",\"not_before\":\"1389210441\",\"expires_on\":\"1389253641\",\"resource\":\"00000003-0000-0ff1-ce00-000000000000/instructure-my.sharepoint.com@4b13a608-c248-4bd1-9017-2794c0d7e5c5\"}"
     results = JSON.parse(raw_results)
     modified_results = @client.format_results(results)
     modified_results['expires_in'].should eq(43199)
-    modified_results['not_before'].to_s.should eq("2014-01-08 12:47:21 -0700")
-    modified_results['expires_on'].to_s.should eq("2014-01-09 00:47:21 -0700")
+    modified_results['not_before'].to_s.should eq("2014-01-08 19:47:21 +0000")
+    modified_results['expires_on'].to_s.should eq("2014-01-09 07:47:21 +0000")
+    ENV['TZ'] = prev_tz
   end
 
   it "#get_realm" do
