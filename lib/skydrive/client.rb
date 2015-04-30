@@ -3,6 +3,7 @@ require 'curb'
 require 'json'
 require 'mimemagic'
 require 'jwt'
+require 'skydrive/raven_logger'
 
 
 module Skydrive
@@ -15,7 +16,9 @@ module Skydrive
     attr_accessor :client_id, :client_secret, :guid, :personal_url, :token, :refresh_token
 
     def initialize(options = {})
-      options.each { |key, val| self.send("#{key}=", val) if self.respond_to?("#{key}=") }
+      options.each do |key, val|
+        self.send("#{key}=", val) if self.respond_to?("#{key}=")
+      end
     end
 
     # URL used to authorize this app for a sharepoint tenant
@@ -196,8 +199,7 @@ module Skydrive
         Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE HEADERS:\n[#{pid}] - #{headers.join('  - ')}")
         Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE BODY:\n[#{pid}] - #{buffer_output}");
         Skydrive.logger.info("[#{pid}] END --\n");
-
-
+        RavenLogger.capture_exception(error)
         raise APIErrorException, error.class.to_s
       end
 

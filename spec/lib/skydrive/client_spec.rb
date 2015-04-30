@@ -4,6 +4,7 @@ describe Skydrive::Client do
   before(:each) do
     @client = Skydrive::Client.new(
       client_domain: "test.skydrive.com",
+      personal_url: "https://personal.skydrive.com",
       client_id: "test"
     )
   end
@@ -14,43 +15,41 @@ describe Skydrive::Client do
       client_secret: 'secret',
       guid: 'asdfjkl',
       token: 'ABCDE',
-      foo: 'bar'
+      random_garbage: 'bar'
     }
     client = Skydrive::Client.new(opts);
     client.client_id.should eq(opts[:client_id])
     client.client_secret.should eq(opts[:client_secret])
     client.guid.should eq(opts[:guid])
     client.token.should eq(opts[:token])
-    client.respond_to?(:foo).should_not be_true
+    expect(client.respond_to?(:random_garbage)).to be false
   end
 
   it "#oauth_authorize_redirect_uri" do
     redirect_uri = "http://localhost/auth/redirect"
-    state = "abcde"
+    state = "abcde-overly-simplified-state"
     redir = @client.oauth_authorize_redirect_uri(redirect_uri, { state: state })
-    redir.should eq("https://test.skydrive.com/_layouts/15/OAuthAuthorize.aspx?client_id=test&scope=Web.Read+AllSites.Write+AllProfiles.Read&redirect_uri=http%3A%2F%2Flocalhost%2Fauth%2Fredirect&response_type=code&state=abcde")
+    redir.should include("state=#{state}")
   end
 
   it "#refresh_token" do
-    returned_realm = "4xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-    Skydrive::Client.any_instance.stub(:get_realm).and_return(returned_realm)
-    stub_request(:post, "https://accounts.accesscontrol.windows.net/#{returned_realm}/tokens/OAuth/2").
-      with(:body => {"client_id"=>"test@#{returned_realm}", "client_secret"=>"", "content_type"=>"application/x-www-form-urlencoded", "grant_type"=>"refresh_token", "refresh_token"=>"NEW_TOKEN", "resource"=>"/test.skydrive.com@#{returned_realm}"},
-        :headers => {'Accept'=>'*/*; q=0.5, application/xml', 'Accept-Encoding'=>'gzip, deflate', 'Content-Length'=>'235', 'Content-Type'=>'application/x-www-form-urlencoded', 'User-Agent'=>'Ruby'}).
-      to_return(:status => 200, 
-        :body => "{\"token_type\":\"Bearer\",\"access_token\":\"ABCDEFGHIJKLMNOPQRSTUVWXYZ\",\"expires_in\":\"43199\",\"not_before\":\"1389210441\",\"expires_on\":\"1389253641\",\"resource\":\"00000003-0000-0ff1-ce00-000000000000/instructure-my.sharepoint.com@4b13a608-c248-4bd1-9017-2794c0d7e5c5\"}",
-        :headers => {
-          :cache_control=>"no-cache, no-store",
-          :pragma=>"no-cache",
-          :content_type=>"application/json; charset=utf-8",
-          :expires=>"-1",
-          :request_id=>"8fa6a09a-354a-4710-8650-e9095e70f8f8",
-          :x_content_type_options=>"nosniff",
-          :date=>"Wed, 08 Jan 2014 19:47:20 GMT",
-          :content_length=>"1183"
-        }
-      )
-    results = @client.refresh_token("NEW_TOKEN")
+    stub_request(:post, "https://login.windows.net/common/oauth2/token").
+         with(:body => {"client_id"=>"test", "client_secret"=>"", "grant_type"=>"refresh_token", "refresh_token"=>"", "resource"=>"NEW_TOKEN"},
+              :headers => {'Accept'=>'*/*; q=0.5, application/xml', 'Accept-Encoding'=>'gzip, deflate', 'Content-Length'=>'88', 'Content-Type'=>'application/x-www-form-urlencoded', 'User-Agent'=>'Ruby'}).
+         to_return(:status => 200,
+           :body => "{\"token_type\":\"Bearer\",\"access_token\":\"ABCDEFGHIJKLMNOPQRSTUVWXYZ\",\"expires_in\":\"43199\",\"not_before\":\"1389210441\",\"expires_on\":\"1389253641\",\"resource\":\"00000003-0000-0ff1-ce00-000000000000/instructure-my.sharepoint.com@4b13a608-c248-4bd1-9017-2794c0d7e5c5\"}",
+           :headers => {
+             :cache_control=>"no-cache, no-store",
+             :pragma=>"no-cache",
+             :content_type=>"application/json; charset=utf-8",
+             :expires=>"-1",
+             :request_id=>"8fa6a09a-354a-4710-8650-e9095e70f8f8",
+             :x_content_type_options=>"nosniff",
+             :date=>"Wed, 08 Jan 2014 19:47:20 GMT",
+             :content_length=>"1183"
+           })
+
+    results = @client.refresh_token(resource: "NEW_TOKEN")
     results['access_token'].should eq('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
     WebMock.reset!
   end
@@ -66,7 +65,7 @@ describe Skydrive::Client do
 
   it "#get_realm" do
     returned_realm = "4xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-    stub_request(:get, "https://test.skydrive.com/_vti_bin/client.svc/").
+    stub_request(:get, "https://personal.skydrive.com/_vti_bin/client.svc/").
       with(:headers => {'Accept'=>'*/*; q=0.5, application/xml', 'Accept-Encoding'=>'gzip, deflate', 'Authorization'=>'Bearer', 'User-Agent'=>'Ruby'}).
       to_return(:status => 200, :body => "", :headers => { :www_authenticate => "Bearer realm=\"#{returned_realm}\",client_id=\"00000003-0000-0ff1-ce00-000000000000\",trusted_issuers=\"00000001-0000-0000-c000-000000000000@*,https://sts.windows.net/*/,00000003-0000-0ff1-ce00-000000000000@90140122-8516-11e1-8eff-49304924019b\"" })
     realm = @client.get_realm
@@ -84,7 +83,7 @@ describe Skydrive::Client do
     Skydrive::Client.any_instance.stub(:api_call).with(uri1).and_return(data1)
     Skydrive::Client.any_instance.stub(:api_call).with(uri2).and_return(data2)
     Skydrive::Client.any_instance.stub(:api_call).with(uri3).and_return(data3)
-    results = @client.get_folder_and_files(uri1) 
+    results = @client.get_folder_and_files(uri1)
 
     results.files.length.should eq(11)
     file_names = results.files.map(&:name)

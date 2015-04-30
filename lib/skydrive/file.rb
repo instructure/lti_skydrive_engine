@@ -33,7 +33,7 @@ module Skydrive
         self.kind = mm.comment
         self.suffix = mm.extensions.last
 
-        if allowed_extensions.empty? || (allowed_extensions & mm.extensions).size > 0
+        if allowed_extensions.blank? || (allowed_extensions & mm.extensions).size > 0
           self.is_embeddable = true
         else
           self.is_embeddable = false
