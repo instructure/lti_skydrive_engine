@@ -62,8 +62,7 @@ module Skydrive
               email: tp.lis_person_contact_email_primary,
           )
 
-      user.token = Token.create unless user.token
-
+      user.ensure_token
       user.cleanup_api_keys
 
       code = user.session_api_key(params).oauth_code
@@ -73,14 +72,18 @@ module Skydrive
     def skydrive_authorized
       skydrive_token = current_user.token
       if skydrive_token && skydrive_token.requires_refresh?
-        skydrive_token.refresh!(skydrive_client)
+        begin
+          skydrive_client.refresh_token = skydrive_token.refresh_token
+          skydrive_token.refresh!(skydrive_client)
+        rescue Skydrive::APIResponseErrorException => error
+          current_user.reset_token!
+        end
       end
 
       if skydrive_token && skydrive_token.is_valid?
         render json: {}, status: 201
       else
         code = current_user.api_keys.active.skydrive_oauth.create.oauth_code
-
         render text: skydrive_client.oauth_authorize_redirect_uri(microsoft_oauth_url, state: code), status: 401
       end
     end
