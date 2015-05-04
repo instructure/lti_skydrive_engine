@@ -10,6 +10,16 @@ module Skydrive
   class APIErrorException < RuntimeError
   end
 
+  class APIResponseErrorException < RuntimeError
+    attr_reader :response, :code, :description
+    def initialize(response)
+      @response = response
+      @code = response['error']
+      @description = response['error_description']
+      super("#{@code}: #{@description}\n#{response}")
+    end
+  end
+
   class Client
     include ActionView::Helpers::NumberHelper
 
@@ -48,7 +58,7 @@ module Skydrive
 
       RestClient.post endpoint, options do |response, request, result|
         log_restclient_response(response, request, result)
-        results = format_results(JSON.parse(response))
+        results = format_results(parse_api_response(response))
         self.token = results['access_token']
         self.refresh_token = results['refresh_token']
         results
@@ -75,7 +85,7 @@ module Skydrive
 
       RestClient.post endpoint, options do |response, request, result|
         log_restclient_response(response, request, result)
-        results = format_results(JSON.parse(response))
+        results = format_results(parse_api_response(response))
         self.token = results['access_token']
         self.refresh_token = results['refresh_token']
         results
@@ -158,18 +168,18 @@ module Skydrive
     end
 
     def api_call(url, headers = {})
-      url.gsub!("https:/i", "https://i")
-      uri = URI.escape(url)
-
-
-      headers['Authorization'] = "Bearer #{token}" unless headers.has_key? 'Authorization'
-      headers['Accept'] = "application/json; odata=verbose" unless headers.has_key? 'Accept'
-
-      c = Curl::Easy.new(uri) do |http|
-        headers.each {|k,v| http.headers[k] = v if v }
-      end
-
       begin
+
+        url.gsub!("https:/i", "https://i")
+        uri = URI.escape(url)
+
+
+        headers['Authorization'] = "Bearer #{token}" unless headers.has_key? 'Authorization'
+        headers['Accept'] = "application/json; odata=verbose" unless headers.has_key? 'Accept'
+
+        c = Curl::Easy.new(uri) do |http|
+          headers.each {|k,v| http.headers[k] = v if v }
+        end
 
         headers = []
         buffer = ""
@@ -183,9 +193,7 @@ module Skydrive
         }
         c.perform
 
-        result = JSON.parse(buffer)
-        raise APIErrorException, result["error"] if result["error"]
-
+        result = parse_api_response(buffer)
       rescue Exception => error
         pid = generate_pid
         headerOutput = c.headers.map {|k,v| "#{k}: #{v}"}.join("\n[#{pid}] - ")
@@ -200,6 +208,9 @@ module Skydrive
         Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE BODY:\n[#{pid}] - #{buffer_output}");
         Skydrive.logger.info("[#{pid}] END --\n");
         RavenLogger.capture_exception(error)
+        if error.instance_of(APIResponseErrorException)
+          raise error
+        end
         raise APIErrorException, error.class.to_s
       end
 
@@ -226,5 +237,10 @@ module Skydrive
       (0...8).map { (65 + rand(26)).chr }.join
     end
 
+    def parse_api_response(body)
+      result = JSON.parse(body)
+      raise APIResponseErrorException, result if result["error"]
+      result
+    end
   end
 end

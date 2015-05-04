@@ -100,4 +100,50 @@ describe Skydrive::Client do
     WebMock.reset!
   end
 
+  it "should throw an exception for invalid json" do
+
+    stub_request(:post, "https://login.windows.net/common/oauth2/token").
+         with(:body => "<notjson />",
+              :headers => {'Accept'=>'*/*; q=0.5, application/xml', 'Accept-Encoding'=>'gzip, deflate', 'Content-Length'=>'88', 'Content-Type'=>'application/x-www-form-urlencoded', 'User-Agent'=>'Ruby'}).
+         to_return(:status => 200,
+           :body => "{\"token_type\":\"Bearer\",\"access_token\":\"ABCDEFGHIJKLMNOPQRSTUVWXYZ\",\"expires_in\":\"43199\",\"not_before\":\"1389210441\",\"expires_on\":\"1389253641\",\"resource\":\"00000003-0000-0ff1-ce00-000000000000/instructure-my.sharepoint.com@4b13a608-c248-4bd1-9017-2794c0d7e5c5\"}",
+           :headers => {
+             :cache_control=>"no-cache, no-store",
+             :pragma=>"no-cache",
+             :content_type=>"text/html; charset=utf-8",
+             :expires=>"-1",
+             :request_id=>"8fa6a09a-354a-4710-8650-e9095e70f8f8",
+             :x_content_type_options=>"nosniff",
+             :date=>"Wed, 08 Jan 2014 19:47:20 GMT",
+             :content_length=>"1183"
+           })
+
+    expect do
+      results = @client.refresh_token(resource: "NEW_TOKEN")
+    end.to raise_error
+    WebMock.reset!
+  end
+
+  it "should throw an exception for when the json has an error code" do
+    stub_request(:post, "https://login.windows.net/common/oauth2/token").
+         with(:body => "<notjson />",
+              :headers => {'Accept'=>'*/*; q=0.5, application/xml', 'Accept-Encoding'=>'gzip, deflate', 'Content-Length'=>'88', 'Content-Type'=>'application/x-www-form-urlencoded', 'User-Agent'=>'Ruby'}).
+         to_return(:status => 200,
+           :body => %Q[{"error":"invalid_request","error_description":"AADSTS90014: The request body must contain the following parameter: 'refresh_token'.\r\nTrace ID: 1a18b1f6-e4b2-4129-a1f8-7fa865546c86\r\nCorrelation ID: 4e75524f-f268-499b-b0a2-e3469408748d\r\nTimestamp: 2015-05-01 19:52:25Z","error_codes":[90014],"timestamp":"2015-05-01 19:52:25Z","trace_id":"1a18b1f6-e4b2-4129-a1f8-7fa865546c86","correlation_id":"4e75524f-f268-499b-b0a2-e3469408748d","submit_url":null,"context":null}],
+           :headers => {
+             :cache_control=>"no-cache, no-store",
+             :pragma=>"no-cache",
+             :content_type=>"application/json; charset=utf-8",
+             :expires=>"-1",
+             :request_id=>"8fa6a09a-354a-4710-8650-e9095e70f8f8",
+             :x_content_type_options=>"nosniff",
+             :date=>"Wed, 08 Jan 2014 19:47:20 GMT",
+             :content_length=>"1183"
+           })
+
+    expect do
+      results = @client.refresh_token(resource: "NEW_TOKEN")
+    end.to raise_error
+    WebMock.reset!
+  end
 end

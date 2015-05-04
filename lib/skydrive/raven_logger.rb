@@ -1,6 +1,4 @@
-require 'skydrive/raven_logger.rb'
 require 'raven'
-
 
 module Skydrive
   class RavenLogger
@@ -10,8 +8,8 @@ module Skydrive
       if (ENV[ENV_KEY])
         config = Raven.configuration
         config.dsn = ENV.fetch(ENV_KEY)
-        Raven.capture_exception(error, {configuration: config})
       end
+      Raven.capture_exception(error, {configuration: config})
     end
   end
 end

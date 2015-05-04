@@ -13,9 +13,7 @@ module Skydrive
 
     def refresh!(client)
       results = {}
-
       results = client.refresh_token(resource: resource)
-
       if results.key? 'access_token'
         attrs = ['token_type', 'expires_in', 'expires_on', 'not_before', 'resource', 'access_token', 'refresh_token']
         update_attributes(results.reject{|a| !attrs.include?(a)})

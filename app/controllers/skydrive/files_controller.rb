@@ -10,10 +10,6 @@ module Skydrive
         head :unauthorized
         return
       end
-
-      if current_user.token && current_user.token.not_before > Time.now
-        current_user.token.refresh!(skydrive_client)
-      end
     end
 
     def index
@@ -56,4 +52,3 @@ module Skydrive
     end
   end
 end
-
