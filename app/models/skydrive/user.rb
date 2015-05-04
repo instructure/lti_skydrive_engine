@@ -26,7 +26,7 @@ module Skydrive
     end
 
     def ensure_token
-      self.token = Token.create(user: self) unless self.token
+      self.token = self.create_token unless self.token
     end
 
     def reset_token!
