@@ -54,12 +54,14 @@ module Skydrive
         return
       end
 
-      user = @account.users.where(username: tp.user_id).first ||
+      user_id = tp.get_custom_param('masquerading_user_id') || tp.user_id
+      is_masquerading = user_id == tp.get_custom_param('masquerading_user_id')
+      user = @account.users.where(username: user_id).first ||
           @account.users.create(
-              lti_user_id: tp.user_id,
-              name: tp.lis_person_name_full,
-              username: tp.user_id,
-              email: tp.lis_person_contact_email_primary,
+              lti_user_id: user_id,
+              name: is_masquerading ? 'masqueraded session' : tp.lis_person_name_full,
+              username: user_id,
+              email: is_masquerading ? 'masqueraded session' : tp.lis_person_contact_email_primary,
           )
 
       user.ensure_token
@@ -124,6 +126,7 @@ module Skydrive
       tc.canvas_homework_submission!
       tc.canvas_account_navigation!
       tc.canvas_course_navigation!(visibility: 'admin')
+      tc.set_custom_param('masquerading_user_id', '$Canvas.masqueradingUser.userId')
       render xml: tc.to_xml
     end
 
