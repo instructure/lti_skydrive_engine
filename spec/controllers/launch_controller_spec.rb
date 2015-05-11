@@ -20,22 +20,23 @@ module Skydrive
         tp.set_custom_param('sharepoint_client_domain', 'test')
         tp.user_id = username
         tp.lis_person_name_full = name
-        LaunchController.any_instance.stub(tool_provider: tp)
+
+        allow_any_instance_of(LaunchController).to receive(:tool_provider).and_return(tp)
         controller.instance_variable_set("@account", account)
       end
 
       it "creates a new user" do
-        user = User.where(email: email).count.should == 0
+        expect(User.where(email: email).count).to be(0)
 
         post 'basic_launch', use_route: :skydrive
-        response.should be_redirect, response.body
+        expect(response).to be_redirect, response.body
 
         user = User.where(email: email).first!
-        user.email.should == email
-        user.username.should == username
-        user.name.should == name
+        expect(user.email).to eq(email)
+        expect(user.username).to eq(username)
+        expect(user.name).to eq(name)
 
-        user.token.should be_a Token
+        expect(user.token).to be_a Token
       end
 
       it "returns a valid oauth code" do
@@ -51,7 +52,7 @@ module Skydrive
         post 'basic_launch', use_route: :skydrive
         code = response.header['Location'].split('/').last
         api_key = ApiKey.where(oauth_code: code).first!
-        api_key.user.should == user
+        expect(api_key.user).to eq(user)
       end
 
       it "cleans out expired tokens" do
@@ -61,7 +62,7 @@ module Skydrive
 
         post 'basic_launch', use_route: :skydrive
 
-        ApiKey.where(id: api_key.id).count.should == 0
+        expect(ApiKey.where(id: api_key.id).count).to be(0)
       end
     end
 
@@ -71,21 +72,21 @@ module Skydrive
         user.save
         user.token = Token.create()
 
-        LaunchController.any_instance.stub(current_user: user)
+        allow_any_instance_of(LaunchController).to receive(:current_user).and_return(user)
 
         post 'skydrive_authorized', use_route: :skydrive
-        response.code.should == "401"
-        response.body.should be_include sharepoint_client_domain
+        expect(response.code).to eq("401")
+        expect(response.body).to include sharepoint_client_domain
       end
 
       it "returns a 200 when the skydrive token is valid" do
         user.save
         user.token = Token.create(access_token: 'token', expires_on: 1.week.from_now)
 
-        LaunchController.any_instance.stub(current_user: user)
+        allow_any_instance_of(LaunchController).to receive(:current_user).and_return(user)
 
         post 'skydrive_authorized', use_route: :skydrive
-        response.should be_success
+        expect(response).to be_success
       end
     end
   end
