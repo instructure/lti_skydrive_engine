@@ -56,13 +56,22 @@ module Skydrive
 
       user_id = tp.get_custom_param('masquerading_user_id') || tp.user_id
       is_masquerading = user_id == tp.get_custom_param('masquerading_user_id')
+      name = is_masquerading ? 'masqueraded session' : tp.lis_person_name_full
+      email = is_masquerading ? 'masqueraded session' : tp.lis_person_contact_email_primary
+
       user = @account.users.where(username: user_id).first ||
           @account.users.create(
               lti_user_id: user_id,
-              name: is_masquerading ? 'masqueraded session' : tp.lis_person_name_full,
+              name: name,
               username: user_id,
-              email: is_masquerading ? 'masqueraded session' : tp.lis_person_contact_email_primary,
+              email: email
           )
+
+      if !is_masquerading && (user.email != email || user.name != name)
+        user.email = email
+        user.name = name
+        user.save!
+      end
 
       user.ensure_token
       user.cleanup_api_keys
