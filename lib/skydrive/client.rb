@@ -208,10 +208,7 @@ module Skydrive
         Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE BODY:\n[#{pid}] - #{buffer_output}");
         Skydrive.logger.info("[#{pid}] END --\n");
         RavenLogger.capture_exception(error)
-        if error.instance_of?(APIResponseErrorException)
-          raise error
-        end
-        raise APIErrorException, error.class.to_s
+        raise error
       end
 
       result["d"] || result

@@ -54,13 +54,24 @@ module Skydrive
         return
       end
 
-      user = @account.users.where(username: tp.user_id).first ||
+      user_id = tp.get_custom_param('masquerading_user_id') || tp.user_id
+      is_masquerading = user_id == tp.get_custom_param('masquerading_user_id')
+      name = is_masquerading ? 'masqueraded session' : tp.lis_person_name_full
+      email = is_masquerading ? 'masqueraded session' : tp.lis_person_contact_email_primary
+
+      user = @account.users.where(username: user_id).first ||
           @account.users.create(
-              lti_user_id: tp.user_id,
-              name: tp.lis_person_name_full,
-              username: tp.user_id,
-              email: tp.lis_person_contact_email_primary,
+              lti_user_id: user_id,
+              name: name,
+              username: user_id,
+              email: email
           )
+
+      if !is_masquerading && (user.email != email || user.name != name)
+        user.email = email
+        user.name = name
+        user.save!
+      end
 
       user.ensure_token
       user.cleanup_api_keys
@@ -124,6 +135,7 @@ module Skydrive
       tc.canvas_homework_submission!
       tc.canvas_account_navigation!
       tc.canvas_course_navigation!(visibility: 'admin')
+      tc.set_custom_param('masquerading_user_id', '$Canvas.masqueradingUser.userId')
       render xml: tc.to_xml
     end
 
@@ -143,13 +155,9 @@ module Skydrive
       RavenLogger.capture_exception(api_error)
       @api_error = api_error
       @title = %s{Ooops! Something went terribly wrong!}
-      @message = ""
+      @message = "An error or invalid response was received from the OneDrive API. Close any popups, refresh the page, and relaunch OneDrive."
 
-      if api_error.message == ERROR_SKY_DRIVE_API
-        @message = %s{The OneDrive API returned an error. Close any popups, and relaunch OneDrive.}
-      elsif api_error.message == ERROR_JSON_PARSE
-        @message = %s{The OneDrive API returned an invalid response. Close any popups, and relaunch OneDrive.}
-      elsif api_error.message == ERROR_NO_API_KEY
+      if api_error.message == ERROR_NO_API_KEY
         @title = %s{Unable to retrieve an access token}
         @message = %s{It looks like your using an old page. Close any popups, and relaunch OneDrive.}
       end

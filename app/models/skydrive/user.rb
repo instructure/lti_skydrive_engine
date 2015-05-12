@@ -33,5 +33,14 @@ module Skydrive
       self.token.delete
       ensure_token
     end
+
+    # Convenience method
+    def onedrive_client
+      @onedrive_client ||=
+          Client.new(SHAREPOINT.merge(
+                         personal_url: self.token.personal_url,
+                         token: self.token.access_token
+                     ))
+    end
   end
 end
