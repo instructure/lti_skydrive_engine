@@ -155,7 +155,7 @@ module Skydrive
       RavenLogger.capture_exception(api_error)
       @api_error = api_error
       @title = %s{Ooops! Something went terribly wrong!}
-      @message = "An error or inavlid response was received from the OneDrive API. Close any popups, and relaunch OneDrive."
+      @message = "An error or invalid response was received from the OneDrive API. Close any popups, refresh the page, and relaunch OneDrive."
 
       if api_error.message == ERROR_NO_API_KEY
         @title = %s{Unable to retrieve an access token}
