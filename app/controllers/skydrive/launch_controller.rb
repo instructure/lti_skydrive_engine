@@ -14,48 +14,39 @@ module Skydrive
     before_filter :ensure_authenticated_user, only: :skydrive_authorized
 
     def tool_provider
-      require 'oauth/request_proxy/rack_request'
+      @tool_provider ||= begin
+        require 'oauth/request_proxy/rack_request'
+        @account = Account.where(key: params['oauth_consumer_key']).first
 
-      @account = Account.where(key: params['oauth_consumer_key']).first
+        if @account
+          key = @account.key
+          secret = @account.secret
+        end
 
-      if @account
-        key = @account.key
-        secret = @account.secret
+        tp = IMS::LTI::ToolProvider.new(key, secret, params)
+
+        if !key
+          tp.lti_errorlog = "Invalid consumer key or secret"
+        elsif !secret
+          tp.lti_errorlog = "Consumer key wasn't recognized"
+        elsif !tp.valid_request?(request)
+          tp.lti_errorlog = "The OAuth signature was invalid"
+        elsif Time.now.utc.to_i - tp.request_oauth_timestamp.to_i > 120
+          tp.lti_errorlog = "Your request is too old"
+        end
+
+        tp
       end
-
-      tp = IMS::LTI::ToolProvider.new(key, secret, params)
-
-      if !key
-        tp.lti_errorlog = "Invalid consumer key or secret"
-      elsif !secret
-        tp.lti_errorlog = "Consumer key wasn't recognized"
-      elsif !tp.valid_request?(request)
-        tp.lti_errorlog = "The OAuth signature was invalid"
-      elsif Time.now.utc.to_i - tp.request_oauth_timestamp.to_i > 120
-        tp.lti_errorlog = "Your request is too old"
-      end
-
-      #
-      ## this isn't actually checking anything like it should, just want people
-      ## implementing real tools to be aware they need to check the nonce
-      #if was_nonce_used_in_last_x_minutes?(@tp.request_oauth_nonce, 60)
-      #  register_error "Why are you reusing the nonce?"
-      #  return false
-      #end
-
-      return tp
     end
 
     def basic_launch
-
       tp = tool_provider
       if tp.lti_errorlog
         render text: tp.lti_errorlog, status: 400, layout: "skydrive/error"
         return
       end
 
-      user_id = tp.get_custom_param('masquerading_user_id') || tp.user_id
-      is_masquerading = user_id == tp.get_custom_param('masquerading_user_id')
+      user_id = is_masquerading && tp.get_custom_param('masquerading_user_id') || tp.user_id
       name = is_masquerading ? 'masqueraded session' : tp.lis_person_name_full
       email = is_masquerading ? 'masqueraded session' : tp.lis_person_contact_email_primary
 
@@ -163,6 +154,13 @@ module Skydrive
       end
 
       render action: :launch_error, status: 400, layout: "skydrive/error"
+    end
+
+    def is_masquerading
+      @is_masquerading ||= begin
+        m_user_id = tool_provider.get_custom_param('masquerading_user_id')
+        !m_user_id.blank? && m_user_id != '$Canvas.masqueradingUser.userId'
+      end
     end
   end
 end

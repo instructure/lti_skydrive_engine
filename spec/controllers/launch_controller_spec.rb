@@ -18,6 +18,7 @@ module Skydrive
         tp = IMS::LTI::ToolProvider.new(nil, nil, {})
         tp.lis_person_contact_email_primary = email
         tp.set_custom_param('sharepoint_client_domain', 'test')
+        tp.set_custom_param('masquerading_user_id', '$Canvas.masqueradingUser.userId')
         tp.user_id = username
         tp.lis_person_name_full = name
 
@@ -157,6 +158,7 @@ module Skydrive
         tp = IMS::LTI::ToolProvider.new(nil, nil, {})
         tp.lis_person_contact_email_primary = "updated_email@example.com"
         tp.set_custom_param('sharepoint_client_domain', 'test')
+        tp.set_custom_param('masquerading_user_id', masquerading_user_id)
         tp.user_id = username
         tp.lis_person_name_full = "Updated Name"
         allow_any_instance_of(LaunchController).to receive(:tool_provider).and_return(tp)
@@ -164,10 +166,10 @@ module Skydrive
         post 'basic_launch', use_route: :skydrive
         expect(response).to be_redirect, response.body
 
-        user = User.where(username: username).first!
-        expect(user.email).to eq("updated_email@example.com")
-        expect(user.username).to eq(username)
-        expect(user.name).to eq("Updated Name")
+        user = User.where(username: masquerading_user_id).first!
+        expect(user.email).to eq(masquerading_email)
+        expect(user.username).to eq(masquerading_user_id)
+        expect(user.name).to eq(masquerading_name)
         expect(user.token).to be_a Token
       end
 

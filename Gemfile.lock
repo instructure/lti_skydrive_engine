@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    lti_skydrive (1.1.2)
+    lti_skydrive (1.2.0)
       active_model_serializers (~> 0.8.0)
       curb
       ims-lti
@@ -125,7 +125,7 @@ GEM
     slop (3.6.0)
     sprockets (3.0.3)
       rack (~> 1.0)
-    sprockets-rails (2.2.4)
+    sprockets-rails (2.3.0)
       actionpack (>= 3.0)
       activesupport (>= 3.0)
       sprockets (>= 2.8, < 4.0)
