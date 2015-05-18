@@ -111,7 +111,7 @@ describe Skydrive::Client do
         :pragma=>"no-cache",
         :content_type=>"text/html; charset=utf-8",
         :expires=>"-1",
-        :request_id=>"8fa6a09a-354a-4710-8650-e9095e70f8f8",
+        :request_id=>"8fa6a09a-0000-4710-0000-e9095e70f8f8",
         :x_content_type_options=>"nosniff",
         :date=>"Wed, 08 Jan 2014 19:47:20 GMT",
         :content_length=>"1183"
@@ -129,13 +129,13 @@ describe Skydrive::Client do
             :headers => {'Accept'=>'*/*; q=0.5, application/xml', 'Accept-Encoding'=>'gzip, deflate', 'Content-Length'=>'88', 'Content-Type'=>'application/x-www-form-urlencoded', 'User-Agent'=>'Ruby'}).
       to_return(:status => 200,
       :body => %q[{
-        "error_description" : "AADSTS90014: The request body must contain the following parameter: 'refresh_token'.\r\nTrace ID: 1a18b1f6-e4b2-4129-a1f8-7fa865546c86\r\nCorrelation ID: 4e75524f-f268-499b-b0a2-e3469408748d\r\nTimestamp: 2015-05-01 19:52:25Z",
-        "correlation_id" : "4e75524f-f268-499b-b0a2-e3469408748d",
+        "error_description" : "AADSTS90014: The request body must contain the following parameter: 'refresh_token'.\r\nTrace ID: 1a18b1f6-0000-4129-0000-7fa865546c86\r\nCorrelation ID: 4e75524f-0000-499b-0000-e3469408748d\r\nTimestamp: 2015-05-01 19:52:25Z",
+        "correlation_id" : "4e75524f-0000-499b-0000-e3469408748d",
         "error_codes" : [
         90014
         ],
         "timestamp" : "2015-05-01 19:52:25Z",
-        "trace_id" : "1a18b1f6-e4b2-4129-a1f8-7fa865546c86",
+        "trace_id" : "1a18b1f6-0000-4129-0000-7fa865546c86",
         "error" : "invalid_request",
         "context" : null,
         "submit_url" : null
@@ -171,7 +171,7 @@ describe Skydrive::Client do
              :pragma=>"no-cache",
              :content_type=>"application/json; charset=utf-8",
              :expires=>"-1",
-             :request_id=>"8fa6a09a-354a-4710-8650-e9095e70f8f8",
+             :request_id=>"8fa6a09a-0000-4710-0000-e9095e70f8f8",
              :x_content_type_options=>"nosniff",
              :date=>"Wed, 08 Jan 2014 19:47:20 GMT",
              :content_length=>"1183"

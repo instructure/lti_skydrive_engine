@@ -29,6 +29,8 @@ module Skydrive
       options.each do |key, val|
         self.send("#{key}=", val) if self.respond_to?("#{key}=")
       end
+
+      RestClient.log = Skydrive.logger
     end
 
     # URL used to authorize this app for a sharepoint tenant
@@ -168,49 +170,16 @@ module Skydrive
     end
 
     def api_call(url, headers = {})
-      begin
+      url.gsub!("https:/i", "https://i")
+      uri = URI.escape(url)
 
-        url.gsub!("https:/i", "https://i")
-        uri = URI.escape(url)
+      headers['Authorization'] = "Bearer #{token}" unless headers.has_key? 'Authorization'
+      headers['Accept'] = "application/json; odata=verbose" unless headers.has_key? 'Accept'
 
-
-        headers['Authorization'] = "Bearer #{token}" unless headers.has_key? 'Authorization'
-        headers['Accept'] = "application/json; odata=verbose" unless headers.has_key? 'Accept'
-
-        c = Curl::Easy.new(uri) do |http|
-          headers.each {|k,v| http.headers[k] = v if v }
-        end
-
-        headers = []
-        buffer = ""
-        c.on_body { |data|
-          buffer << data
-          data.size
-        }
-        c.on_header { |data|
-          headers << data
-          data.size
-        }
-        c.perform
-
-        result = parse_api_response(buffer)
-      rescue Exception => error
-        pid = generate_pid
-        headerOutput = c.headers.map {|k,v| "#{k}: #{v}"}.join("\n[#{pid}] - ")
-        backtrace_output = error.backtrace.join("\n[#{pid}] - ")
-        buffer_output = buffer.split("\n").join("\n[#{pid}] - ")
-
-        Skydrive.logger.error("[#{pid}] SKYDRIVE ERROR: #{error.class.to_s} ◊ #{error}")
-        Skydrive.logger.info("[#{pid}] SKYDRIVE BACKTRACE: \n[#{pid}] - #{backtrace_output}")
-        Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST: #{uri.to_s}")
-        Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST HEADERS:\n[#{pid}] - #{headerOutput}")
-        Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE HEADERS:\n[#{pid}] - #{headers.join('  - ')}")
-        Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE BODY:\n[#{pid}] - #{buffer_output}");
-        Skydrive.logger.info("[#{pid}] END --\n");
-        RavenLogger.capture_exception(error)
-        raise error
+      result = RestClient.get uri, headers do |response, request, result|
+        log_restclient_response(response, request, result)
+        parse_api_response(response)
       end
-
       result["d"] || result
     end
 
@@ -221,17 +190,47 @@ module Skydrive
     private
 
     def log_restclient_response(response, request, result)
-      pid = generate_pid
-      Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST: #{request.url}")
-      Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST PAYLOAD: #{request.payload}")
-      headerOutput = request.headers.values.join("\n  - ")
-      Skydrive.logger.info("[#{pid}] SKYDRIVE REQUEST HEADERS:\n  - #{headerOutput}")
-      Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE CODE: #{result.code}")
-      Skydrive.logger.info("[#{pid}] SKYDRIVE RESPONSE BODY:\n#{response}")
+      response = format_log_lines response.split("\n")
+      request_headers = format_key_value_log_lines request.headers.merge(request.processed_headers)
+      response_headers = format_key_value_log_lines result.each_header
+      payload = request.args[:payload] || (request.payload && request.payload.empty? && request.payload) || '--No Payload!!--'
+
+      Skydrive.logger.info("[#{current_pid}] ====== SKYDRIVE RestClient Response log [#{current_pid}] ========")
+      Skydrive.logger.info("[#{current_pid}] Method:   #{request.method}")
+      Skydrive.logger.info("[#{current_pid}] Endpoint: #{request.url}")
+      Skydrive.logger.info("[#{current_pid}] Headers: #{request_headers}")
+      Skydrive.logger.info("[#{current_pid}] Payload: #{payload}")
+      Skydrive.logger.info("[#{current_pid}] Response Code: #{result.code}")
+      Skydrive.logger.info("[#{current_pid}] Response Headers: #{response_headers}")
+      Skydrive.logger.info("[#{current_pid}] Response Body: #{response}")
+      Skydrive.logger.info("[#{current_pid}] ====== END SKYDRIVE RestClient Response log [#{current_pid}] ========")
     end
 
-    def generate_pid
-      (0...8).map { (65 + rand(26)).chr }.join
+    def format_key_value_log_lines(lines)
+      format_log_lines lines.map {|k, v| "$#{k} => '#{v}'"}
+    end
+
+    def format_log_lines(lines)
+      "\n[#{current_pid}]\t" + lines.join("\n[#{current_pid}]\t")
+    end
+
+    def log_error
+        headerOutput = c.headers.map {|k,v| "#{k}: #{v}"}.join("\n[#{pid}] - ")
+        backtrace_output = error.backtrace.join("\n[#{pid}] - ")
+        buffer_output = buffer.split("\n").join("\n[#{pid}] - ")
+
+        Skydrive.logger.error("[#{current_pid}] SKYDRIVE ERROR: #{error.class.to_s} ◊ #{error}")
+        Skydrive.logger.info("[#{current_pid}] SKYDRIVE BACKTRACE: \n[#{pid}] - #{backtrace_output}")
+        Skydrive.logger.info("[#{current_pid}] SKYDRIVE REQUEST: #{uri.to_s}")
+        Skydrive.logger.info("[#{current_pid}] SKYDRIVE REQUEST HEADERS:\n[#{pid}] - #{headerOutput}")
+        Skydrive.logger.info("[#{current_pid}] SKYDRIVE RESPONSE HEADERS:\n[#{pid}] - #{headers.join('  - ')}")
+        Skydrive.logger.info("[#{current_pid}] SKYDRIVE RESPONSE BODY:\n[#{pid}] - #{buffer_output}");
+        Skydrive.logger.info("[#{current_pid}] END --\n");
+        RavenLogger.capture_exception(error)
+    end
+
+    def current_pid
+      @pid ||= (0...8).map { (65 + rand(26)).chr }.join
     end
 
     def parse_api_response(body)

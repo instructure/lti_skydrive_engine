@@ -105,7 +105,7 @@ module Skydrive
         current_user.token.update_attribute(:personal_url, personal_url)
 
         redirect_to "#{root_path}oauth/callback"
-      rescue Exception => api_error
+      rescue APIResponseErrorException, JSON::ParserError => api_error
         launch_exception_handler api_error
       end
     end
