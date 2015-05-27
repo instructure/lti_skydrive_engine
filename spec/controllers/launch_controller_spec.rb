@@ -188,7 +188,6 @@ module Skydrive
 
       it "returns a skydrive_auth url when the skydrive token is invalid" do
         user.save
-        user.token = Token.create()
 
         allow_any_instance_of(LaunchController).to receive(:current_user).and_return(user)
 
@@ -199,7 +198,7 @@ module Skydrive
 
       it "returns a 200 when the skydrive token is valid" do
         user.save
-        user.token = Token.create(access_token: 'token', expires_on: 1.week.from_now)
+        user.token.update_attributes(access_token: 'token', expires_on: 1.week.from_now)
 
         allow_any_instance_of(LaunchController).to receive(:current_user).and_return(user)
 

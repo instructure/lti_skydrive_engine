@@ -4,10 +4,6 @@ require 'ims/lti'
 module Skydrive
 
   ERROR_NO_API_KEY = "Unable to get an access token, your state is invalid"
-  ERROR_JSON_PARSE = "JSON::ParserError"
-  ERROR_SKY_DRIVE_API = "Skydrive::APIErrorException"
-
-
 
   class LaunchController < ApplicationController
     include ActionController::Cookies
@@ -63,8 +59,6 @@ module Skydrive
         user.name = name
         user.save!
       end
-
-      user.ensure_token
       user.cleanup_api_keys
 
       code = user.session_api_key(params).oauth_code
@@ -72,17 +66,7 @@ module Skydrive
     end
 
     def skydrive_authorized
-      skydrive_token = current_user.token
-      if skydrive_token && skydrive_token.requires_refresh?
-        begin
-          skydrive_client.refresh_token = skydrive_token.refresh_token
-          skydrive_token.refresh!(skydrive_client)
-        rescue Skydrive::APIResponseErrorException => error
-          current_user.reset_token!
-        end
-      end
-
-      if skydrive_token && skydrive_token.is_valid?
+      if current_user.valid_skydrive_token?
         render json: {}, status: 201
       else
         code = current_user.api_keys.active.skydrive_oauth.create.oauth_code
@@ -93,19 +77,19 @@ module Skydrive
     def microsoft_oauth
       begin
         api_key = ApiKey.trade_oauth_code_for_access_token(params['state'])
-        raise RuntimeError, ERROR_NO_API_KEY unless api_key
+        raise OAuthStateException, ERROR_NO_API_KEY unless api_key
 
         @current_user = api_key.user
         skydrive_client.request_oauth_token(params['code'], microsoft_oauth_url)
         service = skydrive_client.get_my_files_service()
         current_user.token.resource = service["serviceResourceId"]
-        current_user.token.refresh!(skydrive_client)
+        current_user.token.refresh!
 
         personal_url = skydrive_client.get_personal_url(service["serviceEndpointUri"]).gsub(/\/Documents$/,'/')
         current_user.token.update_attribute(:personal_url, personal_url)
 
         redirect_to "#{root_path}oauth/callback"
-      rescue APIResponseErrorException, JSON::ParserError => api_error
+      rescue APIResponseErrorException, JSON::ParserError, OAuthStateException => api_error
         launch_exception_handler api_error
       end
     end

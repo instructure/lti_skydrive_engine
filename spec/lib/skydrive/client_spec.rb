@@ -2,9 +2,11 @@ require 'spec_helper'
 
 describe Skydrive::Client do
   before(:each) do
+    token = Skydrive::Token.create()
+    token.personal_url = "https://personal.skydrive.com"
     @client = Skydrive::Client.new(
       client_domain: "test.skydrive.com",
-      personal_url: "https://personal.skydrive.com",
+      user_token: token,
       client_id: "test"
     )
   end
@@ -14,14 +16,14 @@ describe Skydrive::Client do
       client_id: 'id',
       client_secret: 'secret',
       guid: 'asdfjkl',
-      token: 'ABCDE',
+      user_token: "ME",
       random_garbage: 'bar'
     }
     client = Skydrive::Client.new(opts);
     expect(client.client_id).to eq(opts[:client_id])
     expect(client.client_secret).to eq(opts[:client_secret])
     expect(client.guid).to eq(opts[:guid])
-    expect(client.token).to eq(opts[:token])
+    expect(client.user_token).to eq(opts[:user_token])
     expect(client.respond_to?(:random_garbage)).to be false
   end
 
@@ -32,7 +34,7 @@ describe Skydrive::Client do
     expect(redir).to include("state=#{state}")
   end
 
-  it "#refresh_token" do
+  it "#update_api_tokens" do
     stub_request(:post, "https://login.windows.net/common/oauth2/token").
          with(:body => {"client_id"=>"test", "client_secret"=>"", "grant_type"=>"refresh_token", "refresh_token"=>"", "resource"=>"NEW_TOKEN"},
               :headers => {'Accept'=>'*/*; q=0.5, application/xml', 'Accept-Encoding'=>'gzip, deflate', 'Content-Length'=>'88', 'Content-Type'=>'application/x-www-form-urlencoded', 'User-Agent'=>'Ruby'}).
@@ -49,7 +51,7 @@ describe Skydrive::Client do
              :content_length=>"1183"
            })
 
-    results = @client.refresh_token(resource: "NEW_TOKEN")
+    results = @client.update_api_tokens(resource: "NEW_TOKEN")
     expect(results['access_token']).to eq('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
     WebMock.reset!
   end
@@ -118,7 +120,7 @@ describe Skydrive::Client do
       })
 
     expect do
-      results = @client.refresh_token(resource: "NEW_TOKEN")
+      results = @client.update_api_tokens(resource: "NEW_TOKEN")
     end.to raise_error(JSON::ParserError)
     WebMock.reset!
   end
@@ -152,7 +154,7 @@ describe Skydrive::Client do
       })
 
     expect do
-      results = @client.refresh_token(resource: "NEW_TOKEN")
+      results = @client.update_api_tokens(resource: "NEW_TOKEN")
     end.to raise_error(Skydrive::APIResponseErrorException)
     WebMock.reset!
   end
