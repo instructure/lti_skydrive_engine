@@ -7,23 +7,10 @@ require 'skydrive/raven_logger'
 
 
 module Skydrive
-  class APIErrorException < RuntimeError
-  end
-
-  class APIResponseErrorException < RuntimeError
-    attr_reader :response, :code, :description
-    def initialize(response)
-      @response = response
-      @code = response['error']
-      @description = response['error_description']
-      super("#{@code}: #{@description}\n#{response}")
-    end
-  end
-
   class Client
     include ActionView::Helpers::NumberHelper
 
-    attr_accessor :client_id, :client_secret, :guid, :personal_url, :token, :refresh_token
+    attr_accessor :client_id, :client_secret, :guid, :user_token
 
     def initialize(options = {})
       options.each do |key, val|
@@ -31,6 +18,18 @@ module Skydrive
       end
 
       RestClient.log = Skydrive.logger
+    end
+
+    def personal_url
+      user_token.personal_url
+    end
+
+    def token
+      user_token.access_token
+    end
+
+    def refresh_token
+      user_token.refresh_token
     end
 
     # URL used to authorize this app for a sharepoint tenant
@@ -61,8 +60,8 @@ module Skydrive
       RestClient.post endpoint, options do |response, request, result|
         log_restclient_response(response, request, result)
         results = format_results(parse_api_response(response))
-        self.token = results['access_token']
-        self.refresh_token = results['refresh_token']
+        self.user_token.access_token = results['access_token']
+        self.user_token.refresh_token = results['refresh_token']
         results
       end
     end
@@ -73,23 +72,25 @@ module Skydrive
     end
 
     def get_personal_url(service_endpoint_uri)
-      self.personal_url = api_call("#{service_endpoint_uri}/files/root/weburl", {'Accept' => nil})['value']
+      self.user_token.personal_url = api_call("#{service_endpoint_uri}/files/root/weburl", {'Accept' => nil})['value']
     end
 
-    def refresh_token(params)
+    def update_api_tokens(params)
       endpoint = 'https://login.windows.net/common/oauth2/token'
       options = {
           client_id: client_id,
           client_secret: client_secret,
           grant_type: 'refresh_token',
-          refresh_token: @refresh_token
+          refresh_token: self.user_token.refresh_token
       }.merge(params)
+
+      Rails.logger.info("#{refresh_token} | #{params[:refresh_token]} | #{options[:refresh_token]}")
 
       RestClient.post endpoint, options do |response, request, result|
         log_restclient_response(response, request, result)
         results = format_results(parse_api_response(response))
-        self.token = results['access_token']
-        self.refresh_token = results['refresh_token']
+        self.user_token.access_token = results['access_token']
+        self.user_token.refresh_token = results['refresh_token']
         results
       end
     end
@@ -173,7 +174,7 @@ module Skydrive
       url.gsub!("https:/i", "https://i")
       uri = URI.escape(url)
 
-      headers['Authorization'] = "Bearer #{token}" unless headers.has_key? 'Authorization'
+      headers['Authorization'] = "Bearer #{self.user_token.access_token}" unless headers.has_key? 'Authorization'
       headers['Accept'] = "application/json; odata=verbose" unless headers.has_key? 'Accept'
 
       result = RestClient.get uri, headers do |response, request, result|
@@ -195,15 +196,19 @@ module Skydrive
       response_headers = format_key_value_log_lines result.each_header
       payload = request.args[:payload] || (request.payload && request.payload.empty? && request.payload) || '--No Payload!!--'
 
-      Skydrive.logger.info("[#{current_pid}] ====== SKYDRIVE RestClient Response log [#{current_pid}] ========")
-      Skydrive.logger.info("[#{current_pid}] Method:   #{request.method}")
-      Skydrive.logger.info("[#{current_pid}] Endpoint: #{request.url}")
-      Skydrive.logger.info("[#{current_pid}] Headers: #{request_headers}")
-      Skydrive.logger.info("[#{current_pid}] Payload: #{payload}")
-      Skydrive.logger.info("[#{current_pid}] Response Code: #{result.code}")
-      Skydrive.logger.info("[#{current_pid}] Response Headers: #{response_headers}")
-      Skydrive.logger.info("[#{current_pid}] Response Body: #{response}")
-      Skydrive.logger.info("[#{current_pid}] ====== END SKYDRIVE RestClient Response log [#{current_pid}] ========")
+      Skydrive.logger.info(%Q|
+==========================================================================
+========= BEGIN SKYDRIVE RestClient Response log [#{current_pid}] ========
+      Method:   #{request.method}
+      Endpoint: #{request.url}
+      Headers: #{request_headers}
+      Payload: #{payload}
+      Response Code: #{result.code}
+      Response Headers: #{response_headers}
+      Response Body: #{response}
+      Caller: #{format_log_lines caller}
+========= END SKYDRIVE RestClient Response log [#{current_pid}] =========
+=========================================================================|)
     end
 
     def format_key_value_log_lines(lines)
@@ -211,22 +216,20 @@ module Skydrive
     end
 
     def format_log_lines(lines)
-      "\n[#{current_pid}]\t" + lines.join("\n[#{current_pid}]\t")
+      space = "\n          "
+      "#{space}#{lines.join(space)}"
     end
 
-    def log_error
-        headerOutput = c.headers.map {|k,v| "#{k}: #{v}"}.join("\n[#{pid}] - ")
-        backtrace_output = error.backtrace.join("\n[#{pid}] - ")
-        buffer_output = buffer.split("\n").join("\n[#{pid}] - ")
-
-        Skydrive.logger.error("[#{current_pid}] SKYDRIVE ERROR: #{error.class.to_s} ◊ #{error}")
-        Skydrive.logger.info("[#{current_pid}] SKYDRIVE BACKTRACE: \n[#{pid}] - #{backtrace_output}")
-        Skydrive.logger.info("[#{current_pid}] SKYDRIVE REQUEST: #{uri.to_s}")
-        Skydrive.logger.info("[#{current_pid}] SKYDRIVE REQUEST HEADERS:\n[#{pid}] - #{headerOutput}")
-        Skydrive.logger.info("[#{current_pid}] SKYDRIVE RESPONSE HEADERS:\n[#{pid}] - #{headers.join('  - ')}")
-        Skydrive.logger.info("[#{current_pid}] SKYDRIVE RESPONSE BODY:\n[#{pid}] - #{buffer_output}");
-        Skydrive.logger.info("[#{current_pid}] END --\n");
-        RavenLogger.capture_exception(error)
+    def log_error(error)
+      RavenLogger.capture_exception(error)
+      Skydrive.logger.error(%Q|
+==========================================================================
+========= BEGIN SKYDRIVE ERROR [#{current_pid}] ==========================
+      Error: #{error}
+      Class: #{error.class.to_s}
+      Caller: #{format_log_lines  caller}
+========= END SKYDRIVE ERROR [#{current_pid}] ============================
+==========================================================================|)
     end
 
     def current_pid

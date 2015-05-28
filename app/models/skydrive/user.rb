@@ -2,6 +2,9 @@ module Skydrive
   class User < ActiveRecord::Base
     include ActiveModel::ForbiddenAttributesProtection
 
+    after_initialize :ensure_token
+    after_initialize :cleanup_api_keys
+
     has_many :api_keys
     has_one :token
     belongs_to :account
@@ -26,6 +29,14 @@ module Skydrive
     end
 
     def ensure_token
+      if self.token
+        begin
+          self.token.refresh! if self.token.requires_refresh?
+        rescue Skydrive::APIResponseErrorException, JSON::ParserError => error
+          self.reset_token!
+        end
+      end
+
       self.token = self.create_token unless self.token
     end
 
@@ -34,12 +45,10 @@ module Skydrive
       ensure_token
     end
 
-    # Convenience method
-    def onedrive_client
-      @onedrive_client ||=
+    def skydrive_client
+      @skydrive_client ||=
           Client.new(SHAREPOINT.merge(
-                         personal_url: self.token.personal_url,
-                         token: self.token.access_token
+                          user_token: self.token
                      ))
     end
   end
