@@ -1,4 +1,5 @@
 require 'open-uri'
+require 'mimemagic'
 
 module Skydrive
   class FilesController < ApplicationController
@@ -44,8 +45,14 @@ module Skydrive
       if api_key
         user = api_key.user
         uri = "#{user.token.personal_url}_api/Web/GetFileByServerRelativeUrl('#{params[:file].gsub(/ /, '%20')}')/$value"
-        puts "URI: #{uri}"
-        send_data open(uri, { "Authorization" => "Bearer #{user.token.access_token}"}, &:read)
+
+        send_data_options = {
+          filename: ::File.basename(params[:file]),
+          type: MimeMagic::by_extension(params[:file].match(/\.[a-z]+$/))
+        }
+
+        data = open(uri, { "Authorization" => "Bearer #{user.token.access_token}"}, &:read)
+        send_data(data, send_data_options)
       else
         render status: 401
       end
