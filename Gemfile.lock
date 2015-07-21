@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    lti_skydrive (1.2.0)
+    lti_skydrive (1.2.1)
       active_model_serializers (~> 0.8.0)
       curb
       ims-lti
@@ -68,7 +68,7 @@ GEM
     mail (2.6.3)
       mime-types (>= 1.16, < 3)
     method_source (0.8.2)
-    mime-types (2.5)
+    mime-types (2.6.1)
     mimemagic (0.3.0)
     minitest (5.6.1)
     multipart-post (2.0.0)
@@ -123,9 +123,9 @@ GEM
     sentry-raven (0.13.3)
       faraday (>= 0.7.6)
     slop (3.6.0)
-    sprockets (3.1.0)
+    sprockets (3.2.0)
       rack (~> 1.0)
-    sprockets-rails (2.3.1)
+    sprockets-rails (2.3.2)
       actionpack (>= 3.0)
       activesupport (>= 3.0)
       sprockets (>= 2.8, < 4.0)
