@@ -19,9 +19,9 @@ Gem::Specification.new do |s|
 
   s.add_dependency "rails", "~> 4.1.8"
   s.add_dependency "active_model_serializers", "~> 0.8.0"
-  s.add_dependency "ims-lti"
+  s.add_dependency "ims-lti", "~> 1.1.8"
   s.add_dependency "rest-client"
-  s.add_dependency "curb"
+  s.add_dependency "curb", "< 0.9"
   s.add_dependency "mimemagic"
   s.add_dependency "jwt"
 

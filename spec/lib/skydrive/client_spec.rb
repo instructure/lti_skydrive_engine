@@ -36,8 +36,8 @@ describe Skydrive::Client do
 
   it "#update_api_tokens" do
     stub_request(:post, "https://login.windows.net/common/oauth2/token").
-         with(:body => {"client_id"=>"test", "client_secret"=>"", "grant_type"=>"refresh_token", "refresh_token"=>"", "resource"=>"NEW_TOKEN"},
-              :headers => {'Accept'=>'*/*; q=0.5, application/xml', 'Accept-Encoding'=>'gzip, deflate', 'Content-Length'=>'88', 'Content-Type'=>'application/x-www-form-urlencoded', 'User-Agent'=>'Ruby'}).
+         with(:body => {"client_id"=>"test", "client_secret"=>true, "grant_type"=>"refresh_token", "refresh_token"=>true, "resource"=>"NEW_TOKEN"},
+              :headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip, deflate', 'Content-Length'=>'86', 'Content-Type'=>'application/x-www-form-urlencoded', 'Host'=>'login.windows.net', 'User-Agent'=>'rest-client/2.0.1 (linux-gnu x86_64) ruby/2.1.9p490'}).
          to_return(:status => 200,
            :body => "{\"token_type\":\"Bearer\",\"access_token\":\"ABCDEFGHIJKLMNOPQRSTUVWXYZ\",\"expires_in\":\"43199\",\"not_before\":\"1389210441\",\"expires_on\":\"1389253641\",\"resource\":\"00000003-0000-0ff1-ce00-000000000000/instructure-my.sharepoint.com@4b13a608-c248-4bd1-9017-2794c0d7e5c5\"}",
            :headers => {
@@ -72,7 +72,7 @@ describe Skydrive::Client do
   it "#get_realm" do
     returned_realm = "4xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
     stub_request(:get, "https://personal.skydrive.com/_vti_bin/client.svc/").
-      with(:headers => {'Accept'=>'*/*; q=0.5, application/xml', 'Accept-Encoding'=>'gzip, deflate', 'Authorization'=>'Bearer', 'User-Agent'=>'Ruby'}).
+      with(:headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip, deflate', 'Authorization'=>'Bearer', 'Host'=>'personal.skydrive.com', 'User-Agent'=>'rest-client/2.0.1 (linux-gnu x86_64) ruby/2.1.9p490'}).
       to_return(:status => 200, :body => "", :headers => { :www_authenticate => "Bearer realm=\"#{returned_realm}\",client_id=\"00000003-0000-0ff1-ce00-000000000000\",trusted_issuers=\"00000001-0000-0000-c000-000000000000@*,https://sts.windows.net/*/,00000003-0000-0ff1-ce00-000000000000@90140122-8516-11e1-8eff-49304924019b\"" })
     realm = @client.get_realm
     expect(realm).to eq(returned_realm)
@@ -104,10 +104,10 @@ describe Skydrive::Client do
 
   it "should throw an exception for invalid json" do
     stub_request(:post, "https://login.windows.net/common/oauth2/token").
-      with(:body => {"client_id"=>"test", "client_secret"=>"", "grant_type"=>"refresh_token", "refresh_token"=>"", "resource"=>"NEW_TOKEN"},
-            :headers => {'Accept'=>'*/*; q=0.5, application/xml', 'Accept-Encoding'=>'gzip, deflate', 'Content-Length'=>'88', 'Content-Type'=>'application/x-www-form-urlencoded', 'User-Agent'=>'Ruby'}).
+      with(:body => {"client_id"=>"test", "client_secret"=>true, "grant_type"=>"refresh_token", "refresh_token"=>true, "resource"=>"NEW_TOKEN"},
+           :headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip, deflate', 'Content-Length'=>'86', 'Content-Type'=>'application/x-www-form-urlencoded', 'Host'=>'login.windows.net', 'User-Agent'=>'rest-client/2.0.1 (linux-gnu x86_64) ruby/2.1.9p490'}).
       to_return(:status => 200,
-        :body => "<notjson />",
+        :body => "",
         :headers => {
         :cache_control=>"no-cache, no-store",
         :pragma=>"no-cache",
@@ -127,8 +127,8 @@ describe Skydrive::Client do
 
   it "should throw an exception for when the json has an error code" do
     stub_request(:post, "https://login.windows.net/common/oauth2/token").
-      with(:body => {"client_id"=>"test", "client_secret"=>"", "grant_type"=>"refresh_token", "refresh_token"=>"", "resource"=>"NEW_TOKEN"},
-            :headers => {'Accept'=>'*/*; q=0.5, application/xml', 'Accept-Encoding'=>'gzip, deflate', 'Content-Length'=>'88', 'Content-Type'=>'application/x-www-form-urlencoded', 'User-Agent'=>'Ruby'}).
+      with(:body => {"client_id"=>"test", "client_secret"=>true, "grant_type"=>"refresh_token", "refresh_token"=>true, "resource"=>"NEW_TOKEN"},
+           :headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip, deflate', 'Content-Length'=>'86', 'Content-Type'=>'application/x-www-form-urlencoded', 'Host'=>'login.windows.net', 'User-Agent'=>'rest-client/2.0.1 (linux-gnu x86_64) ruby/2.1.9p490'}).
       to_return(:status => 200,
       :body => %q[{
         "error_description" : "AADSTS90014: The request body must contain the following parameter: 'refresh_token'.\r\nTrace ID: 1a18b1f6-0000-4129-0000-7fa865546c86\r\nCorrelation ID: 4e75524f-0000-499b-0000-e3469408748d\r\nTimestamp: 2015-05-01 19:52:25Z",
