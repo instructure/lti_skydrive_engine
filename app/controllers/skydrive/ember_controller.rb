@@ -21,15 +21,21 @@ module Skydrive
     end
 
     def health_check
-      begin
-        ApiKey.count
+      if database_healthy?
         head 200
-      rescue
+      else
         head 500
       end
     end
 
     private
+
+    def database_healthy?
+      ActiveRecord::Base.connection
+      true
+    rescue ActiveRecord::NoDatabaseError, PG::ConnectionBad
+      false
+    end
 
     def account_params
       params.require(:account).permit(:name, :email, :institution, :title)
