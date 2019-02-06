@@ -1,4 +1,4 @@
-class CreateLtiKeys < ActiveRecord::Migration
+class CreateLtiKeys < ActiveRecord::Migration[4.2]
   def change
     create_table :lti_keys do |t|
       t.string :key

@@ -1,4 +1,4 @@
-class AddSkydriveTokenStorage < ActiveRecord::Migration
+class AddSkydriveTokenStorage < ActiveRecord::Migration[4.2]
   def change
     create_table :skydrive_tokens do |t|
       t.integer :user_id

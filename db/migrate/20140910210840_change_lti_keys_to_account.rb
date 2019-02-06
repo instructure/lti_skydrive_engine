@@ -1,4 +1,4 @@
-class ChangeLtiKeysToAccount < ActiveRecord::Migration
+class ChangeLtiKeysToAccount < ActiveRecord::Migration[4.2]
   def up
     rename_table :skydrive_lti_keys, :skydrive_accounts
 

@@ -37,7 +37,7 @@ module Skydrive
         end
       end
 
-      self.token = self.create_token unless self.token
+      self.token = self.build_token unless self.token
     end
 
     def reset_token!

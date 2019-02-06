@@ -3,14 +3,13 @@ require 'spec_helper'
 module Skydrive
   describe LaunchController,  :type => :controller do
 
-    account = Account.find_or_create_by!(key: "one", secret: "not_two" )
     let(:email) {'user@email.com'}
     let(:username) {'user'}
     let(:name) {'User'}
     let(:sharepoint_client_domain) {'login.windows.net'}
 
-    let(:account) {account}
-    let(:user) {account.users.find_or_initialize_by(email: 'user@email.com', username: 'user', name: 'User')}
+    let(:account) {Account.where(key: "one", secret: "not_two" ).first_or_create!}
+    let(:user) {account.users.where(email: 'user@email.com', username: 'user', name: 'User').first_or_create!}
 
     describe '#basic_launch' do
 
@@ -29,7 +28,7 @@ module Skydrive
       it "creates a new user" do
         expect(User.where(email: email).count).to be(0)
 
-        post 'basic_launch', use_route: :skydrive
+        post 'basic_launch', params: {use_route: :skydrive}
         expect(response).to be_redirect, response.body
 
         user = User.where(email: email).first!
@@ -49,7 +48,7 @@ module Skydrive
         tp.lis_person_name_full = "Updated Name"
         allow_any_instance_of(LaunchController).to receive(:tool_provider).and_return(tp)
 
-        post 'basic_launch', use_route: :skydrive
+        post 'basic_launch', params: {use_route: :skydrive}
         expect(response).to be_redirect, response.body
 
         user = User.where(username: username).first!
@@ -60,7 +59,7 @@ module Skydrive
       end
 
       it "returns a valid oauth code" do
-        post 'basic_launch', use_route: :skydrive
+        post 'basic_launch', params: {use_route: :skydrive}
 
         code = response.header['Location'].split('/').last
         api_key = ApiKey.where(oauth_code: code).first!
@@ -69,7 +68,7 @@ module Skydrive
       it "find existing users" do
         user.save
 
-        post 'basic_launch', use_route: :skydrive
+        post 'basic_launch', params: {use_route: :skydrive}
         code = response.header['Location'].split('/').last
         api_key = ApiKey.where(oauth_code: code).first!
         expect(api_key.user).to eq(user)
@@ -80,7 +79,7 @@ module Skydrive
         api_key = user.session_api_key
         api_key.update_attributes(expired_at: Time.now)
 
-        post 'basic_launch', use_route: :skydrive
+        post 'basic_launch', params: {use_route: :skydrive}
 
         expect(ApiKey.where(id: api_key.id).count).to be(0)
       end
@@ -90,7 +89,7 @@ module Skydrive
     let(:masquerading_user_id) {'this_is_a_masqueraded_id'}
     let(:masquerading_email) {'masquerading_user@asd.com'}
     let(:masquerading_name) { 'Dr. masquerading name'}
-    let(:masquerading_user) {account.users.find_or_initialize_by(email: masquerading_email, username: masquerading_user_id, name: masquerading_name)}
+    let(:masquerading_user) {account.users.where(email: masquerading_email, username: masquerading_user_id, name: masquerading_name).first_or_initialize}
 
     describe '#basic_launch masqueraded' do
 
@@ -109,7 +108,7 @@ module Skydrive
       it "creates a new user with masqueraded user" do
         expect(User.where(username: masquerading_user_id).count).to be(0)
 
-        post 'basic_launch', use_route: :skydrive
+        post 'basic_launch', params: {use_route: :skydrive}
         expect(response).to be_redirect, response.body
 
         user = User.where(username: masquerading_user_id).first!
@@ -121,7 +120,7 @@ module Skydrive
       end
 
       it "returns a valid oauth code with masqueraded user" do
-        post 'basic_launch', use_route: :skydrive
+        post 'basic_launch', params: {use_route: :skydrive}
 
         code = response.header['Location'].split('/').last
         api_key = ApiKey.where(oauth_code: code).first!
@@ -130,7 +129,7 @@ module Skydrive
       it "find existing users with masqueraded user" do
         masquerading_user.save
 
-        post 'basic_launch', use_route: :skydrive
+        post 'basic_launch', params: {use_route: :skydrive}
         code = response.header['Location'].split('/').last
         api_key = ApiKey.where(oauth_code: code).first!
         expect(api_key.user).to eq(masquerading_user)
@@ -139,7 +138,7 @@ module Skydrive
       it "find existing users with masqueraded user" do
         masquerading_user.save
 
-        post 'basic_launch', use_route: :skydrive
+        post 'basic_launch', params: {use_route: :skydrive}
         code = response.header['Location'].split('/').last
         api_key = ApiKey.where(oauth_code: code).first!
 
@@ -163,7 +162,7 @@ module Skydrive
         tp.lis_person_name_full = "Updated Name"
         allow_any_instance_of(LaunchController).to receive(:tool_provider).and_return(tp)
 
-        post 'basic_launch', use_route: :skydrive
+        post 'basic_launch', params: {use_route: :skydrive}
         expect(response).to be_redirect, response.body
 
         user = User.where(username: masquerading_user_id).first!
@@ -178,7 +177,7 @@ module Skydrive
         api_key = masquerading_user.session_api_key
         api_key.update_attributes(expired_at: Time.now)
 
-        post 'basic_launch', use_route: :skydrive
+        post 'basic_launch', params: {use_route: :skydrive}
 
         expect(ApiKey.where(id: api_key.id).count).to be(0)
       end
@@ -191,7 +190,7 @@ module Skydrive
 
         allow_any_instance_of(LaunchController).to receive(:current_user).and_return(user)
 
-        post 'skydrive_authorized', use_route: :skydrive
+        post 'skydrive_authorized', params: {use_route: :skydrive}
         expect(response.code).to eq("401")
         expect(response.body).to include sharepoint_client_domain
       end
@@ -202,7 +201,7 @@ module Skydrive
 
         allow_any_instance_of(LaunchController).to receive(:current_user).and_return(user)
 
-        post 'skydrive_authorized', use_route: :skydrive
+        post 'skydrive_authorized', params: {use_route: :skydrive}
         expect(response).to be_success
       end
     end
