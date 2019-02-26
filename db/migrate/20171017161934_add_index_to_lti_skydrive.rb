@@ -1,4 +1,4 @@
-class AddIndexToLtiSkydrive < ActiveRecord::Migration
+class AddIndexToLtiSkydrive < ActiveRecord::Migration[4.2]
   def change
     add_index(:skydrive_api_keys, :scope)
     add_index(:skydrive_api_keys, :expired_at)

@@ -1,4 +1,4 @@
-class AddAccountToUsers < ActiveRecord::Migration
+class AddAccountToUsers < ActiveRecord::Migration[4.2]
   def up
     add_column :skydrive_users, :account_id, :integer
     add_column :skydrive_users, :lti_user_id, :text

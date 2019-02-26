@@ -3,8 +3,8 @@ require 'mimemagic'
 
 module Skydrive
   class FilesController < ApplicationController
-    before_filter :ensure_authenticated_user, except: :download
-    before_filter :ensure_valid_skydrive_token, except: :download
+    before_action :ensure_authenticated_user, except: :download
+    before_action :ensure_valid_skydrive_token, except: :download
 
     def ensure_valid_skydrive_token
       unless current_user.valid_skydrive_token?

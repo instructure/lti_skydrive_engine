@@ -1,4 +1,4 @@
-class SkydriveNamespace < ActiveRecord::Migration
+class SkydriveNamespace < ActiveRecord::Migration[4.2]
   def self.up
     rename_table :api_keys, :skydrive_api_keys
     rename_table :lti_keys, :skydrive_lti_keys

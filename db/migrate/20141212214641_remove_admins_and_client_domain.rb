@@ -1,4 +1,4 @@
-class RemoveAdminsAndClientDomain < ActiveRecord::Migration
+class RemoveAdminsAndClientDomain < ActiveRecord::Migration[4.2]
   def up
     remove_column :skydrive_tokens, :client_domain
     remove_column :skydrive_accounts, :admin_id

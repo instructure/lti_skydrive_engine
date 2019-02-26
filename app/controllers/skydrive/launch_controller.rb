@@ -7,7 +7,7 @@ module Skydrive
 
   class LaunchController < ApplicationController
     include ActionController::Cookies
-    before_filter :ensure_authenticated_user, only: :skydrive_authorized
+    before_action :ensure_authenticated_user, only: :skydrive_authorized
 
     def tool_provider
       @tool_provider ||= begin
@@ -38,7 +38,7 @@ module Skydrive
     def basic_launch
       tp = tool_provider
       if tp.lti_errorlog
-        render text: tp.lti_errorlog, status: 400, layout: "skydrive/error"
+        render plain: tp.lti_errorlog, status: 400, layout: "skydrive/error"
         return
       end
 
@@ -70,7 +70,7 @@ module Skydrive
         render json: {}, status: 201
       else
         code = current_user.api_keys.active.skydrive_oauth.create.oauth_code
-        render text: skydrive_client.oauth_authorize_redirect_uri(microsoft_oauth_url, state: code), status: 401
+        render plain: skydrive_client.oauth_authorize_redirect_uri(microsoft_oauth_url, state: code), status: 401
       end
     end
 
